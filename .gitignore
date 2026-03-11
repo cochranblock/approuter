@@ -19,3 +19,6 @@
 /wowasticker
 /vendor
 /docs
+
+# Claude Code worktrees
+.claude/worktrees/
