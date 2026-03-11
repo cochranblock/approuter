@@ -1,11 +1,5 @@
 # whyyoulying
 
-Proactive detection of **Labor Category Fraud** and **Ghost Billing** for DoD IG and FBI fraud investigators.
-
-Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
-
----
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -29,6 +23,8 @@ flowchart LR
 | ![Export](docs/artifacts/screenshot-export.png) | Sample `export-referral` output |
 
 ---
+
+Proactive detection of **Labor Category Fraud** and **Ghost Billing** for DoD IG and FBI fraud investigators. Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
 
 ## Quick Start
 

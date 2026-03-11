@@ -1,7 +1,5 @@
 # OakilyDokily
 
-Hero site with interactive mural embed.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -25,6 +23,10 @@ flowchart TB
 ### Demo
 
 *Add `docs/artifacts/demo-scroll.gif` for scroll + mural interaction.*
+
+---
+
+Hero site with interactive mural embed.
 
 ## Build
 

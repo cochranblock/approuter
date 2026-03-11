@@ -1,8 +1,6 @@
 <!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
 # Rogue Repo
 
-Sovereign, high-security software repository and ISO 8583 payment engine. 100% Rust.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -23,6 +21,10 @@ flowchart TB
 | View | Description |
 |------|-------------|
 | ![API response](docs/artifacts/screenshot-buy-bucks.png) | `/buy-bucks` or curl output |
+
+---
+
+Sovereign, high-security software repository and ISO 8583 payment engine. 100% Rust.
 
 ## Workspace Crates
 

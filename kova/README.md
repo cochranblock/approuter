@@ -1,7 +1,5 @@
 # Kova
 
-Augment engine. Hybrid: native egui GUI + web client, shared API. Tokenized orchestration (f18–f23), c2 broadcast, hive sync.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -30,6 +28,10 @@ flowchart TB
 ### Demo
 
 *Add `docs/artifacts/demo-gui.gif` for GUI or web flow.*
+
+---
+
+Augment engine. Hybrid: native egui GUI + web client, shared API. Tokenized orchestration (f18–f23), c2 broadcast, hive sync.
 
 ## Build
 

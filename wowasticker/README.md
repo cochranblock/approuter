@@ -1,7 +1,5 @@
 # wowasticker
 
-Pure Rust, offline-first mobile app for student behavioral goals. Local AI dictation via Candle Whisper, SQLite persistence, thumb-zone optimized UI.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -61,6 +59,10 @@ Wire flow: User tap ─► audio capture ─► transcribe ─► parse ─► d
 ### Demo
 
 *Add `docs/artifacts/demo-dictation.gif` for tap → dictate → sticker update.*
+
+---
+
+Pure Rust, offline-first mobile app for student behavioral goals. Local AI dictation via Candle Whisper, SQLite persistence, thumb-zone optimized UI.
 
 ## Build
 

@@ -1,8 +1,6 @@
 <!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
 # Rogue Runner
 
-1000-level endless runner. Procedural generation, offline, cross-platform.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -25,6 +23,10 @@ flowchart LR
 ### Demo
 
 *Add `docs/artifacts/demo-gameplay.gif` for 10–15s gameplay; optional `demo-gameplay.mp4` for longer.*
+
+---
+
+1000-level endless runner. Procedural generation, offline, cross-platform.
 
 ## Targets
 

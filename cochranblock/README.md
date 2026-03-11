@@ -1,8 +1,6 @@
 <!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
 # cochranblock
 
-Portfolio site for Michael Cochran — Rust Axum server with embedded assets.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -34,6 +32,10 @@ flowchart LR
 ### Demo
 
 *Add `docs/artifacts/demo-hero.gif` for hero scroll or Products carousel.*
+
+---
+
+Portfolio site for Michael Cochran — Rust Axum server with embedded assets.
 
 ## Run
 

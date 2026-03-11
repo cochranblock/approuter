@@ -1,7 +1,5 @@
 # OakilyDokily Interactive Mural (Rust + Macroquad, WASM)
 
-High-performance 2D interactive mural targeting `wasm32-unknown-unknown` for web.
-
 ## Proof of Artifacts
 
 *Wire diagrams, screenshots, and demos for quick review.*
@@ -26,6 +24,10 @@ flowchart LR
 ### Demo
 
 *Add `docs/artifacts/demo-pets.gif` for pets wandering, interaction, guinea pig kiss.*
+
+---
+
+High-performance 2D interactive mural targeting `wasm32-unknown-unknown` for web.
 
 ## Build
 
