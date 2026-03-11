@@ -1,0 +1,6 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: §9 — cb od rr rtr separate. Only rebuild touched. Ports 443 3000 3001 8080.
+alwaysApply: true
+---
+→ §9

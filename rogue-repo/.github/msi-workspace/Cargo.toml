@@ -1,0 +1,4 @@
+# Minimal workspace for MSI build (avoids rogue-repo's approuter dep)
+[workspace]
+resolver = "2"
+members = ["../../rogue-runner"]

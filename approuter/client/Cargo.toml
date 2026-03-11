@@ -1,0 +1,18 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+# Client lib for self-registering with approuter. Lives in approuter context.
+
+[package]
+name = "approuter-client"
+version = "0.1.0"
+edition = "2021"
+description = "Self-register with approuter (f116). Used by cochranblock, oakilydokily."
+
+[lib]
+name = "approuter_client"
+path = "src/lib.rs"
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json", "rustls-tls", "gzip"], default-features = false }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

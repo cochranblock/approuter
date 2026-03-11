@@ -1,0 +1,351 @@
+// Copyright (c) 2026 The Cochran Block. All rights reserved.
+//! f81=run_code_gen_pipeline. Modular: inference, compilation, fix_loop.
+
+mod compilation;
+mod error_kind;
+mod fix_loop;
+
+use std::path::Path;
+use std::sync::Arc;
+use std::thread;
+use tokio::sync::{broadcast, Mutex};
+
+pub use compilation::{cargo_check, cargo_clippy, cargo_test};
+pub use error_kind::{categorize, ErrorKind};
+pub use fix_loop::fix_and_retry;
+
+/// Extract first ```rust ... ``` block from text.
+pub(crate) fn extract_rust_block(s: &str) -> Option<String> {
+    let start = s.find("```rust")?;
+    let after_start = &s[start + 7..];
+    let end = after_start.find("```")?;
+    Some(after_start[..end].trim().to_string())
+}
+
+fn format_with_chain(response: &str, chain: &[String], stage: &str, stderr: &str) -> String {
+    let chain_str = if chain.is_empty() {
+        String::new()
+    } else {
+        format!("\n{}", chain.join(" → "))
+    };
+    format!(
+        "{}{}\n\n---\n⚠ {} failed after retries:\n```\n{}\n```",
+        response, chain_str, stage, stderr
+    )
+}
+
+/// f81=run_code_gen_pipeline. Returns broadcast::Receiver for GUI + serve to subscribe.
+#[allow(clippy::too_many_arguments)]
+pub fn f81(
+    coder_path: &Path,
+    fix_path: &Path,
+    system_prompt: &str,
+    user_input: &str,
+    project_dir: &Path,
+    max_retries: u32,
+    run_clippy: bool,
+    last_trace: Option<Arc<Mutex<Option<crate::trace::LastTrace>>>>,
+) -> broadcast::Receiver<String> {
+    let (tx, rx) = broadcast::channel(16);
+    let coder = coder_path.to_path_buf();
+    let fix = fix_path.to_path_buf();
+    let system = system_prompt.to_string();
+    let input = user_input.to_string();
+    let project = project_dir.to_path_buf();
+
+    thread::spawn(move || {
+        let rt = match tokio::runtime::Runtime::new() {
+            Ok(r) => r,
+            Err(e) => {
+                let _ = tx.send(format!("Error: tokio: {}", e));
+                return;
+            }
+        };
+        let result = rt.block_on(run_pipeline(
+            &coder,
+            &fix,
+            &system,
+            &input,
+            &project,
+            max_retries,
+            run_clippy,
+            tx.clone(),
+            last_trace,
+        ));
+        let _ = tx.send(result);
+    });
+
+    rx
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_pipeline(
+    fix_path: &Path,
+    system_prompt: &str,
+    user_input: &str,
+    project_dir: &Path,
+    max_retries: u32,
+    run_clippy: bool,
+    tx: broadcast::Sender<String>,
+    last_trace: Option<Arc<Mutex<Option<crate::trace::LastTrace>>>>,
+) -> String {
+    let _ = tx.send("Generating…".to_string());
+
+    let mut trace = crate::trace::LastTrace {
+        intent: "FullPipeline".to_string(),
+        user_msg: user_input.to_string(),
+        ..Default::default()
+    };
+
+    let ctx = crate::context_loader::f82_with_recent(project_dir, user_input, Some(30));
+    let context_block = crate::context_loader::format_context(&ctx);
+
+    let code_gen_prompt = format!(
+        "{}{}\n\nGenerate Rust code only. Put code in ```rust ... ``` blocks. Be concise.",
+        system_prompt, context_block
+    );
+
+    let mut response = match crate::inference::f80(coder_path, &code_gen_prompt, user_input).await {
+        Ok(s) => s,
+        Err(e) => {
+            trace.outcome = "failed".to_string();
+            trace.stage = "inference".to_string();
+            write_last_trace(&last_trace, &trace).await;
+            return format!("Error: {}", e);
+        }
+    };
+
+    let mut attempt = 0u32;
+    let mut chain: Vec<String> = Vec::new();
+
+    loop {
+        let Some(ref code) = extract_rust_block(&response) else {
+            trace.outcome = "success".to_string();
+            write_last_trace(&last_trace, &trace).await;
+            return response;
+        };
+
+        let tmp = match tempfile::TempDir::new() {
+            Ok(d) => d,
+            Err(e) => {
+                trace.outcome = "failed".to_string();
+                write_last_trace(&last_trace, &trace).await;
+                return format!("Error: temp dir: {}", e);
+            }
+        };
+
+        std::fs::write(
+            tmp.path().join("Cargo.toml"),
+            r#"[package]
+name = "gen"
+version = "0.1.0"
+edition = "2021"
+"#,
+        )
+        .ok();
+        std::fs::create_dir_all(tmp.path().join("src")).ok();
+        std::fs::write(tmp.path().join("src/lib.rs"), code).ok();
+
+        let _ = tx.send("Checking…".to_string());
+        let (ok, stderr) = cargo_check(tmp.path());
+        if !ok {
+            attempt += 1;
+            chain.push(format!("Attempt {}: compile failed", attempt));
+            trace.stage = "compile".to_string();
+            trace.stderr = stderr.clone();
+            trace.retry_count = attempt;
+            trace.chain = chain.clone();
+            if attempt > max_retries {
+                trace.outcome = "failed".to_string();
+                write_last_trace(&last_trace, &trace).await;
+                return format_with_chain(&response, &chain, "compile", &stderr);
+            }
+            let _ = tx.send(format!("Compile failed (attempt {}), fixing…", attempt));
+            response = match fix_and_retry(fix_path, project_dir, "compile", &stderr, code).await {
+                Ok(s) => s,
+                Err(e) => {
+                    trace.outcome = "failed".to_string();
+                    write_last_trace(&last_trace, &trace).await;
+                    return format!("Error on fix attempt {}: {}", attempt, e);
+                }
+            };
+            continue;
+        }
+
+        if run_clippy {
+            let _ = tx.send("Clippy…".to_string());
+            let (ok, stderr) = cargo_clippy(tmp.path());
+            if !ok {
+                attempt += 1;
+                chain.push(format!("Attempt {}: clippy failed", attempt));
+                trace.stage = "clippy".to_string();
+                trace.stderr = stderr.clone();
+                trace.retry_count = attempt;
+                trace.chain = chain.clone();
+                if attempt > max_retries {
+                    trace.outcome = "failed".to_string();
+                    write_last_trace(&last_trace, &trace).await;
+                    return format_with_chain(&response, &chain, "clippy", &stderr);
+                }
+                let _ = tx.send(format!("Clippy failed (attempt {}), fixing…", attempt));
+                response = match fix_and_retry(fix_path, project_dir, "clippy", &stderr, code).await {
+                    Ok(s) => s,
+                    Err(e) => {
+                        trace.outcome = "failed".to_string();
+                        write_last_trace(&last_trace, &trace).await;
+                        return format!("Error on fix attempt {}: {}", attempt, e);
+                    }
+                };
+                continue;
+            }
+        }
+
+        let _ = tx.send("Testing…".to_string());
+        let (ok, stderr) = cargo_test(tmp.path());
+        if !ok {
+            attempt += 1;
+            chain.push(format!("Attempt {}: tests failed", attempt));
+            trace.stage = "tests".to_string();
+            trace.stderr = stderr.clone();
+            trace.retry_count = attempt;
+            trace.chain = chain.clone();
+            if attempt > max_retries {
+                trace.outcome = "failed".to_string();
+                write_last_trace(&last_trace, &trace).await;
+                return format_with_chain(&response, &chain, "tests", &stderr);
+            }
+            let _ = tx.send(format!("Tests failed (attempt {}), fixing…", attempt));
+            response = match fix_and_retry(fix_path, project_dir, "tests", &stderr, code).await {
+                Ok(s) => s,
+                Err(e) => {
+                    trace.outcome = "failed".to_string();
+                    write_last_trace(&last_trace, &trace).await;
+                    return format!("Error on fix attempt {}: {}", attempt, e);
+                }
+            };
+            continue;
+        }
+
+        trace.outcome = "success".to_string();
+        if chain.is_empty() {
+            write_last_trace(&last_trace, &trace).await;
+            return response;
+        }
+        chain.push("✓".to_string());
+        trace.chain = chain.clone();
+        write_last_trace(&last_trace, &trace).await;
+        return format!("{}\n\n---\n{}", response, chain.join(" → "));
+    }
+}
+
+async fn write_last_trace(
+    last_trace: &Option<Arc<Mutex<Option<crate::trace::LastTrace>>>>,
+    trace: &crate::trace::LastTrace,
+) {
+    if let Some(arc) = last_trace {
+        let mut guard = arc.lock().await;
+        *guard = Some(trace.clone());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{cargo_check, cargo_clippy, cargo_test, extract_rust_block};
+    use crate::pipeline::error_kind::{categorize, ErrorKind};
+
+    #[test]
+    fn categorize_syntax_missing_semicolon() {
+        let stderr = "error: expected `;` after expression\n  --> src/lib.rs:2:20";
+        assert_eq!(categorize(stderr), ErrorKind::Syntax);
+    }
+
+    #[test]
+    fn categorize_borrow_checker() {
+        let stderr = "error[E0382]: use of moved value: `x`";
+        assert_eq!(categorize(stderr), ErrorKind::BorrowChecker);
+    }
+
+    #[test]
+    fn categorize_lifetime() {
+        let stderr = "error[E0597]: `s` does not live long enough";
+        assert_eq!(categorize(stderr), ErrorKind::Lifetime);
+    }
+
+    #[test]
+    fn fix_loop_syntax_error_within_retries() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(
+            tmp.path().join("Cargo.toml"),
+            r#"[package]
+name = "gen"
+version = "0.1.0"
+edition = "2021"
+"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(tmp.path().join("src")).unwrap();
+        // Deliberate syntax error: missing semicolon
+        std::fs::write(
+            tmp.path().join("src/lib.rs"),
+            "pub fn foo() { let x = 1 }",
+        )
+        .unwrap();
+        let (ok, stderr) = cargo_check(tmp.path());
+        assert!(!ok, "cargo check must fail with syntax error");
+        assert!(stderr.contains("expected") || stderr.contains(";"));
+        assert_eq!(categorize(&stderr), ErrorKind::Syntax);
+
+        // Fix: add semicolon
+        std::fs::write(
+            tmp.path().join("src/lib.rs"),
+            "pub fn foo() { let x = 1; }",
+        )
+        .unwrap();
+        let (ok, _) = cargo_check(tmp.path());
+        assert!(ok, "fixed code must pass cargo check");
+    }
+
+    #[test]
+    fn extract_rust_block_basic() {
+        let s = "Here is code:\n```rust\nfn main() {}\n```\nDone.";
+        assert_eq!(extract_rust_block(s).as_deref(), Some("fn main() {}"));
+    }
+
+    #[test]
+    fn extract_rust_block_trimmed() {
+        let s = "```rust\n  let x = 1;  \n```";
+        assert_eq!(extract_rust_block(s).as_deref(), Some("let x = 1;"));
+    }
+
+    #[test]
+    fn extract_rust_block_none_when_no_block() {
+        assert!(extract_rust_block("no code here").is_none());
+        assert!(extract_rust_block("```python\nx=1\n```").is_none());
+    }
+
+    #[test]
+    fn cargo_check_clippy_test_on_valid_lib() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(
+            tmp.path().join("Cargo.toml"),
+            r#"[package]
+name = "gen"
+version = "0.1.0"
+edition = "2021"
+"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(tmp.path().join("src")).unwrap();
+        std::fs::write(
+            tmp.path().join("src/lib.rs"),
+            "pub fn add(a: i32, b: i32) -> i32 { a + b }\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n    #[test]\n    fn it_works() { assert_eq!(add(1, 2), 3); }\n}\n",
+        )
+        .unwrap();
+        let (ok, _) = cargo_check(tmp.path());
+        assert!(ok, "cargo check must pass");
+        let (ok, _) = cargo_clippy(tmp.path());
+        assert!(ok, "cargo clippy must pass");
+        let (ok, _) = cargo_test(tmp.path());
+        assert!(ok, "cargo test must pass");
+    }
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
+  <!-- 8-bit landscape - hills, grass, seamless tile -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a0a2e"/>
+      <stop offset="0.5" stop-color="#2d1b4e"/>
+      <stop offset="1" stop-color="#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="hill-far" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#2a1a4a"/>
+      <stop offset="1" stop-color="#3d2a5a"/>
+    </linearGradient>
+    <linearGradient id="hill-mid" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#4a2a5a"/>
+      <stop offset="1" stop-color="#5a3a6a"/>
+    </linearGradient>
+    <linearGradient id="hill-near" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#3d2a4a"/>
+      <stop offset="1" stop-color="#5a4a6a"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#1a3d1a"/>
+      <stop offset="0.7" stop-color="#2a5a2a"/>
+      <stop offset="1" stop-color="#3d6a3d"/>
+    </linearGradient>
+  </defs>
+  <!-- Far hills -->
+  <path d="M0,120 Q100,80 200,120 Q300,60 400,120 Q500,90 600,120 Q700,70 800,120 L800,200 L0,200 Z" fill="url(#hill-far)"/>
+  <!-- Mid hills -->
+  <path d="M0,150 Q150,100 300,150 Q450,120 600,150 Q750,100 800,150 L800,200 L0,200 Z" fill="url(#hill-mid)"/>
+  <!-- Near hills / ground -->
+  <path d="M0,170 Q200,140 400,170 Q600,150 800,170 L800,200 L0,200 Z" fill="url(#hill-near)"/>
+  <!-- Grass tufts - 8-bit blocks -->
+  <rect x="20" y="175" width="8" height="25" fill="#2a5a2a"/>
+  <rect x="100" y="172" width="8" height="28" fill="#3d6a3d"/>
+  <rect x="180" y="178" width="8" height="22" fill="#2a5a2a"/>
+  <rect x="260" y="174" width="8" height="26" fill="#3d6a3d"/>
+  <rect x="340" y="176" width="8" height="24" fill="#2a5a2a"/>
+  <rect x="420" y="172" width="8" height="28" fill="#3d6a3d"/>
+  <rect x="500" y="178" width="8" height="22" fill="#2a5a2a"/>
+  <rect x="580" y="175" width="8" height="25" fill="#3d6a3d"/>
+  <rect x="660" y="173" width="8" height="27" fill="#2a5a2a"/>
+  <rect x="740" y="177" width="8" height="23" fill="#3d6a3d"/>
+</svg>

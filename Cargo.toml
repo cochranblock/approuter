@@ -1,0 +1,45 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+[workspace]
+resolver = "2"
+members = [
+    "kova-core",
+    "kova-web",
+    "cochranblock",
+    "approuter",
+    "approuter/client",
+    "oakilydokily",
+    "oakilydokily/mural-wasm",
+    "kova",
+    "whyyoulying",
+    "wowasticker",
+]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+thiserror = "2"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tempfile = "3"
+chrono = { version = "0.4", features = ["serde"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+# Servers: faster runtime (opt-level 3). CLI/tools keep "z" for size.
+[profile.release.package.approuter]
+opt-level = 3
+[profile.release.package.cochranblock]
+opt-level = 3
+[profile.release.package.oakilydokily]
+opt-level = 3
+
+[patch.crates-io]
+xml5ever = { path = "vendor/xml5ever" }

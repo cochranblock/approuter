@@ -1,0 +1,47 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: CI pipeline rules — the test binary IS the CI pipeline
+globs: ["**/*.rs", "**/*.toml", "**/*.yml", "**/*.yaml"]
+alwaysApply: true
+---
+
+# CI PIPELINE RULES
+
+## Core Principle: The Test Binary IS the CI Pipeline
+There is no separate test framework, no cargo test, no external test runner.
+Running `cargo run -- --test` (or equivalent) executes the entire CI validation pipeline.
+
+## Pipeline Stages (concepts — implementation follows these)
+
+### Stage 1: COMPILATION
+- Build must succeed with zero errors
+- Only tokenization-related warnings allowed via #![allow(...)]
+- Any other warning is a bug — fix at root cause
+
+### Stage 2: UNIT TESTS (f49)
+- Validate core crate functions directly — no I/O, no processes, no network
+- Cover: crypto (round-trip, tamper, wrong key, nonce uniqueness), password (hash/verify),
+  session lifecycle, config parsing, error sanitization
+- Comprehensive coverage of core business logic
+
+### Stage 3: INTEGRATION TESTS (f50)
+- Real DB in temp directories, fully isolated per test
+- Cover: DB init, CRUD, encrypted storage, audit trails
+- Each test owns its TempDir and DB — no shared state
+
+### Stage 4: HTTP TESTS (f51)
+- Real server on random port, real HTTP requests
+- Cover: all routes (200 + content), static assets, 404
+- Include flows for any auth/admin/setup routes that exist
+
+### Stage 5: EXIT CODE
+- Exit 0 = all phases pass → CI GREEN
+- Exit 1 = any phase fails → CI RED
+- All phases run to completion (full picture, not first failure only)
+
+## Iteration Protocol for Fixing CI Failures
+1. Read the FULL error/failure output — do not skim
+2. Fix the FIRST error/failure (they often cascade)
+3. Rebuild, rerun tests
+4. Do NOT write multiple files without building between them
+5. Do NOT guess — the compiler tells you what's wrong

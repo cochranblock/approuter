@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 24" width="32" height="24">
+  <!-- 8-bit guinea pig - compact, round -->
+  <rect width="32" height="24" fill="transparent"/>
+  <!-- body - oval shape -->
+  <rect x="4" y="8" width="24" height="14" rx="4" fill="#8B7355"/>
+  <rect x="8" y="10" width="4" height="4" fill="#6B5344"/>
+  <rect x="20" y="10" width="4" height="4" fill="#6B5344"/>
+  <!-- head -->
+  <rect x="10" y="4" width="12" height="10" fill="#9B8365"/>
+  <!-- ears -->
+  <rect x="10" y="2" width="4" height="4" fill="#8B7355"/>
+  <rect x="18" y="2" width="4" height="4" fill="#8B7355"/>
+  <!-- eyes -->
+  <rect x="12" y="8" width="3" height="3" fill="#1a1a1a"/>
+  <rect x="17" y="8" width="3" height="3" fill="#1a1a1a"/>
+  <rect x="13" y="9" width="1" height="1" fill="#fff"/>
+  <rect x="18" y="9" width="1" height="1" fill="#fff"/>
+  <!-- nose -->
+  <rect x="14" y="11" width="4" height="2" fill="#6B5344"/>
+</svg>

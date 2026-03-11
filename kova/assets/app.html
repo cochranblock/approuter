@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kova — Augment Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #050508;
+      --bg: #050508;
+      --surface: #0d0d14;
+      --surface-elevated: #14141f;
+      --text: #e8e8e8;
+      --muted: #9ca3af;
+      --accent: #00d9ff;
+      --accent-hover: #33e1ff;
+      --purple: #9d4edd;
+      --cyber-teal: #00ffcc;
+      --border: rgba(0, 217, 255, 0.15);
+      --glow: rgba(0, 217, 255, 0.35);
+      --radius: 8px;
+      --radius-sm: 6px;
+      --transition: 0.2s ease;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Rajdhani', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: var(--void);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 400px 250px at 8% 12%, rgba(0, 217, 255, 0.12), transparent 50%),
+        radial-gradient(ellipse 350px 220px at 92% 8%, rgba(157, 78, 221, 0.1), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .app { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 0 0 0.25rem;
+      letter-spacing: 0.08em;
+    }
+    .header .tagline {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    .prompt-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .prompt-card:hover {
+      border-color: rgba(0, 217, 255, 0.25);
+      box-shadow: 0 0 24px rgba(0, 217, 255, 0.06);
+    }
+    .prompt-card label {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    #prompt {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem 1rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      resize: vertical;
+      transition: border-color var(--transition);
+    }
+    #prompt:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    #prompt::placeholder {
+      color: var(--muted);
+      opacity: 0.7;
+    }
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1.25rem;
+      background: var(--accent);
+      color: var(--void);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: all var(--transition);
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(0, 217, 255, 0.08);
+    }
+    .stream-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .stream-card h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    #stream {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+    #stream:empty::before {
+      content: 'Output will stream here…';
+      color: var(--muted);
+    }
+    .status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+    .status.ok { color: var(--cyber-teal); }
+    .status.err { color: #ff6b6b; }
+    .footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    .output-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .diff-details {
+      margin-top: 0.5rem;
+    }
+    .diff-details summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    #diff {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: var(--surface-elevated);
+      border-radius: var(--radius-sm);
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .project-label { font-size: 0.85rem; color: var(--muted); margin: 0; }
+    .project-select {
+      flex: 1;
+      max-width: 280px;
+      padding: 0.4rem 0.6rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .prompts-panel {
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+    }
+    .prompts-panel summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; }
+    .prompts-panel pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      max-height: 120px;
+      overflow-y: auto;
+      margin: 0.5rem 0 0;
+      color: var(--text);
+    }
+    .backlog-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .backlog-item .intent { color: var(--accent); font-weight: 600; }
+    .backlog-item .muted { color: var(--muted); font-size: 0.85rem; }
+    .choice-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Kova</h1>
+      <p class="tagline">AI Bending with Iron Man Method — human directs, AI executes.</p>
+    </header>
+
+    <section class="prompt-card">
+      <div class="toolbar">
+        <label for="project" class="project-label">Project</label>
+        <select id="project" class="project-select"></select>
+      </div>
+      <details id="prompts-panel" class="prompts-panel">
+        <summary>system.md / persona.md</summary>
+        <pre id="system-prompt"></pre>
+        <pre id="persona-prompt"></pre>
+      </details>
+      <label for="prompt">What do you want to build?</label>
+      <textarea id="prompt" placeholder="e.g. Add a greet function to main.rs&#10;e.g. Fix the clippy warning in router.rs" autofocus></textarea>
+      <div id="choice-buttons" class="choice-buttons" style="display:none; margin-top:0.5rem; flex-wrap:wrap; gap:0.4rem;"></div>
+      <div class="actions">
+        <button type="button" class="btn" id="send">Generate</button>
+        <button type="button" class="btn btn-secondary" id="explain">Explain last run</button>
+        <button type="button" class="btn btn-secondary" id="backlog-toggle">Backlog</button>
+        <button type="button" class="btn btn-secondary" id="clear">Clear</button>
+        <button type="button" class="btn btn-secondary" id="save-demo" style="display:none;">Save demo</button>
+      </div>
+      <details id="backlog-panel" class="prompts-panel">
+        <summary>Backlog items</summary>
+        <div id="backlog-list"></div>
+      </details>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="stream-card">
+      <h3>Output</h3>
+      <pre id="stream"></pre>
+      <div id="output-actions" class="output-actions" style="display:none;">
+        <button type="button" class="btn btn-secondary" id="copy">Copy</button>
+        <button type="button" class="btn btn-secondary" id="apply">Apply</button>
+        <button type="button" class="btn btn-secondary" id="backlog">Add to backlog</button>
+        <details class="diff-details">
+          <summary>Show diff</summary>
+          <pre id="diff"></pre>
+        </details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <a href="https://cochranblock.org/products">CochranBlock</a> · Augment engine
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      const API_BASE = window.location.origin;
+      const DEMO = new URLSearchParams(location.search).get('demo') === '1';
+      const promptEl = document.getElementById('prompt');
+      const streamEl = document.getElementById('stream');
+      const statusEl = document.getElementById('status');
+      const sendBtn = document.getElementById('send');
+      const explainBtn = document.getElementById('explain');
+      const clearBtn = document.getElementById('clear');
+      const outputActions = document.getElementById('output-actions');
+      const copyBtn = document.getElementById('copy');
+      const applyBtn = document.getElementById('apply');
+      const backlogBtn = document.getElementById('backlog');
+      const diffEl = document.getElementById('diff');
+      const projectSelect = document.getElementById('project');
+      const promptsPanel = document.getElementById('prompts-panel');
+
+      let lastOutput = '';
+      let lastPrompt = '';
+      let currentProject = null;
+      let priorMessage = null;
+      let clarificationChoices = null;
+
+      const demoRecord = DEMO ? { name: 'web-' + Date.now(), source: 'web', actions: [], started_at: String(Math.floor(Date.now()/1000)) } : null;
+      function demoPush(kind, data) {
+        if (!demoRecord) return;
+        demoRecord.actions.push({ kind, ...data, ts_ms: Date.now() });
+      }
+      const origFetch = window.fetch;
+      if (DEMO) {
+        window.fetch = function(url, opts) {
+          const path = (typeof url === 'string' ? url : url.url).replace(API_BASE, '');
+          if (path.startsWith('/api/') && path !== '/api/demo/record') {
+            demoPush('api_call', { method: (opts && opts.method) || 'GET', path, body_summary: opts && opts.body ? String(opts.body).slice(0, 200) : null });
+          }
+          return origFetch.apply(this, arguments);
+        };
+        document.addEventListener('click', function(e) {
+          const sel = e.target.id ? '#' + e.target.id : (e.target.className ? '.' + e.target.className.split(' ')[0] : e.target.tagName);
+          demoPush('web_click', { selector: sel });
+        }, true);
+        promptEl.addEventListener('input', function() { demoPush('web_input', { id: 'prompt', value: promptEl.value.slice(0, 100) }); });
+      }
+
+      async function loadProjects() {
+        try {
+          const [projRes, listRes] = await Promise.all([
+            fetch(API_BASE + '/api/project'),
+            fetch(API_BASE + '/api/projects')
+          ]);
+          const projData = projRes.ok ? await projRes.json() : {};
+          const list = listRes.ok ? await listRes.json() : [];
+          currentProject = projData.project || (list[0] || null);
+          projectSelect.innerHTML = '';
+          for (const p of list) {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p.split(/[/\\]/).pop() || p;
+            if (p === currentProject) opt.selected = true;
+            projectSelect.appendChild(opt);
+          }
+          if (!currentProject && list.length) currentProject = list[0];
+        } catch (e) { console.warn('loadProjects:', e); }
+      }
+      loadProjects();
+
+      projectSelect.onchange = function() { currentProject = projectSelect.value || null; };
+
+      if (DEMO) {
+        document.getElementById('save-demo').style.display = 'inline-flex';
+        document.getElementById('save-demo').onclick = async function() {
+          try {
+            const res = await origFetch(API_BASE + '/api/demo/record', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(demoRecord)
+            });
+            const data = await res.json();
+            if (res.ok) setStatus('Demo saved: ' + (data.path || ''), true);
+            else setStatus(data.error || 'Save failed', false);
+          } catch (e) { setStatus('Error: ' + e.message, false); }
+        };
+      }
+
+      promptsPanel.addEventListener('toggle', async function() {
+        if (promptsPanel.open && !document.getElementById('system-prompt').textContent) {
+          try {
+            const res = await fetch(API_BASE + '/api/prompts');
+            const data = await res.json();
+            document.getElementById('system-prompt').textContent = data.system || '';
+            document.getElementById('persona-prompt').textContent = data.persona || '';
+          } catch (e) { console.warn('loadPrompts:', e); }
+        }
+      });
+
+      const backlogPanel = document.getElementById('backlog-panel');
+      document.getElementById('backlog-toggle').onclick = async function() {
+        backlogPanel.open = !backlogPanel.open;
+        if (backlogPanel.open && !document.getElementById('backlog-list').innerHTML) {
+          try {
+            const res = await fetch(API_BASE + '/api/backlog');
+            const data = await res.json();
+            const list = document.getElementById('backlog-list');
+            list.innerHTML = '';
+            (data.items || []).forEach((entry, i) => {
+              const div = document.createElement('div');
+              div.className = 'backlog-item';
+              div.innerHTML = '<span class="intent">' + (entry.intent || '') + '</span> <span class="muted">' + (entry.project || '-') + '</span>';
+              const runBtn = document.createElement('button');
+              runBtn.className = 'btn btn-secondary';
+              runBtn.textContent = 'Run';
+              runBtn.onclick = () => runBacklogItem(i);
+              div.appendChild(runBtn);
+              list.appendChild(div);
+            });
+          } catch (e) { console.warn('loadBacklog:', e); }
+        }
+      };
+
+      async function runBacklogItem(index) {
+        setStatus('Running…');
+        try {
+          const res = await fetch(API_BASE + '/api/backlog/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            if (data.stream) {
+              streamEl.textContent = '';
+              setStatus('Streaming…');
+              const ws = new WebSocket((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws/stream');
+              ws.onmessage = function(e) { appendStream(e.data); };
+              ws.onclose = function() {
+                setStatus('Done.', true);
+                const code = extractRustBlock(streamEl.textContent);
+                const hint = extractHint(lastPrompt);
+                showOutputActions(code, hint);
+              };
+              ws.onerror = function() { setStatus('WebSocket error.', false); };
+            } else {
+              setStatus('Done.', true);
+              streamEl.textContent = (data.summary ? data.summary.join('\n') : data.message || '') + '\n\n' + streamEl.textContent;
+            }
+          } else {
+            setStatus(data.error || 'Run failed', false);
+          }
+        } catch (e) {
+          setStatus('Error: ' + e.message, false);
+        }
+      }
+
+      function setStatus(msg, ok) {
+        statusEl.textContent = msg;
+        statusEl.className = 'status' + (ok === true ? ' ok' : ok === false ? ' err' : '');
+      }
+
+      function appendStream(text) {
+        streamEl.textContent += text;
+        streamEl.scrollTop = streamEl.scrollHeight;
+      }
+
+      function extractRustBlock(text) {
+        const m = text.match(/```rust\n?([\s\S]*?)```/);
+        return m ? m[1].trim() : null;
+      }
+
+      function extractHint(prompt) {
+        const m = prompt.match(/\b(\w+)\.rs\b/i);
+        return m ? m[1] + '.rs' : 'lib.rs';
+      }
+
+      function showOutputActions(code, hint) {
+        if (!code) return;
+        outputActions.style.display = 'block';
+        outputActions.dataset.code = code;
+        outputActions.dataset.hint = hint;
+
+        copyBtn.onclick = async function() {
+          try {
+            await navigator.clipboard.writeText(code);
+            setStatus('Copied.', true);
+          } catch (e) {
+            setStatus('Copy failed:', false);
+          }
+        };
+
+        applyBtn.onclick = async function() {
+          applyBtn.disabled = true;
+          try {
+            const res = await fetch(API_BASE + '/api/apply', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ hint: hint, content: code })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              setStatus('Applied to ' + (data.path || ''), true);
+            } else {
+              setStatus(data.error || 'Apply failed', false);
+            }
+          } catch (e) {
+            setStatus('Error: ' + e.message, false);
+          }
+          applyBtn.disabled = false;
+        };
+
+        backlogBtn.onclick = async function() {
+          backlogBtn.disabled = true;
+          try {
+            const projRes = await fetch(API_BASE + '/api/project');
+            const projData = await projRes.json();
+            const project = projRes.ok ? projData.project : null;
+            const res = await fetch(API_BASE + '/api/backlog', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ intent: 'full-pipeline', project: project })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              setStatus('Added to backlog.', true);
+            } else {
+              setStatus(data.error || 'Backlog add failed', false);
+            }
+          } catch (e) {
+            setStatus('Error: ' + e.message, false);
+          }
+          backlogBtn.disabled = false;
+        };
+
+        fetch(API_BASE + '/api/diff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hint: hint, new_content: code })
+        }).then(r => r.text()).then(diff => {
+          diffEl.textContent = diff || '(no diff)';
+        }).catch(() => { diffEl.textContent = '(diff unavailable)'; });
+      }
+
+      clearBtn.onclick = function() {
+        streamEl.textContent = '';
+        outputActions.style.display = 'none';
+        setStatus('');
+      };
+
+      explainBtn.onclick = async function() {
+        explainBtn.disabled = true;
+        setStatus('Explaining…');
+        try {
+          const res = await fetch(API_BASE + '/api/explain/run', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) {
+            setStatus(data.error || 'Explain failed', false);
+            streamEl.textContent = (data.error || 'No trace. Run a pipeline first.') + '\n\n' + streamEl.textContent;
+          } else {
+            setStatus('Done.', true);
+            streamEl.textContent = (data.explanation || '') + '\n\n---\n' + streamEl.textContent;
+          }
+        } catch (e) {
+          setStatus('Error: ' + e.message, false);
+        }
+        explainBtn.disabled = false;
+      };
+
+      sendBtn.onclick = async function() {
+        const prompt = promptEl.value.trim();
+        if (!prompt) {
+          setStatus('Enter a prompt.', false);
+          return;
+        }
+
+        sendBtn.disabled = true;
+        outputActions.style.display = 'none';
+        setStatus('Routing…');
+
+        try {
+          const routeBody = priorMessage
+            ? { message: prompt, prior_message: priorMessage }
+            : { message: prompt };
+          const routeRes = await fetch(API_BASE + '/api/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(routeBody)
+          });
+          const routeData = await routeRes.json();
+
+          if (!routeRes.ok) {
+            setStatus(routeData.error || 'Route failed', false);
+            sendBtn.disabled = false;
+            return;
+          }
+
+          if (routeData.needs_clarification) {
+            priorMessage = priorMessage || prompt;
+            clarificationChoices = routeData.choices || null;
+            const letters = 'abcde';
+            streamEl.textContent = (routeData.suggested_question || 'Could you clarify?') +
+              (clarificationChoices && clarificationChoices.length
+                ? '\n\nChoices: ' + clarificationChoices.map((c, i) => '(' + (letters[i] || (i+1)) + ') ' + c).join(' ')
+                : '');
+            promptEl.placeholder = 'Reply (e.g. a, compute.rs, or cancel)';
+            const choiceDiv = document.getElementById('choice-buttons');
+            if (clarificationChoices && clarificationChoices.length) {
+              choiceDiv.style.display = 'flex';
+              choiceDiv.innerHTML = clarificationChoices.map((c, i) =>
+                '<button type="button" class="btn btn-secondary choice-btn" data-choice="' + c.replace(/"/g, '&quot;') + '" data-letter="' + (letters[i] || (i+1)) + '">(' + (letters[i] || (i+1)) + ') ' + c + '</button>'
+              ).join('') + '<button type="button" class="btn btn-secondary choice-btn" data-cancel>Cancel</button>';
+              choiceDiv.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.onclick = function() {
+                  if (this.dataset.cancel) {
+                    priorMessage = null;
+                    clarificationChoices = null;
+                    choiceDiv.style.display = 'none';
+                    choiceDiv.innerHTML = '';
+                    streamEl.textContent = 'Cancelled.';
+                    setStatus('', true);
+                    return;
+                  }
+                  promptEl.value = this.dataset.letter || this.dataset.choice;
+                  choiceDiv.style.display = 'none';
+                  choiceDiv.innerHTML = '';
+                  sendBtn.click();
+                };
+              });
+            } else {
+              choiceDiv.style.display = 'none';
+              choiceDiv.innerHTML = '';
+            }
+            setStatus('Awaiting clarification…', true);
+            sendBtn.disabled = false;
+            return;
+          }
+
+          const toGenerate = routeData.enriched_message || priorMessage || prompt;
+          priorMessage = null;
+          clarificationChoices = null;
+          document.getElementById('choice-buttons').style.display = 'none';
+          document.getElementById('choice-buttons').innerHTML = '';
+          promptEl.placeholder = 'e.g. Add a greet function to main.rs';
+          lastPrompt = toGenerate;
+          streamEl.textContent = '';
+          setStatus('Streaming…');
+
+          const body = {
+            s0: { FullPipeline: null },
+            s1: toGenerate,
+            s2: [{ MustNotBreakTests: null }, { MayUseGpu: null }]
+          };
+          if (currentProject) body.project = currentProject;
+          const res = await fetch(API_BASE + '/api/intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            setStatus('Intent failed: ' + (data.detail || res.status), false);
+            sendBtn.disabled = false;
+            return;
+          }
+
+          if (data.summary && Array.isArray(data.summary)) {
+            lastOutput = data.summary.join('\n');
+            appendStream(lastOutput);
+            setStatus('Done.', true);
+            sendBtn.disabled = false;
+            return;
+          }
+
+          const ws = new WebSocket((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws/stream');
+          ws.onmessage = function(e) { appendStream(e.data); };
+          ws.onclose = function() {
+            setStatus('Done.', true);
+            sendBtn.disabled = false;
+            lastOutput = streamEl.textContent;
+            const code = extractRustBlock(lastOutput);
+            const hint = extractHint(lastPrompt);
+            showOutputActions(code, hint);
+          };
+          ws.onerror = function() {
+            setStatus('WebSocket error.', false);
+            sendBtn.disabled = false;
+          };
+        } catch (e) {
+          setStatus('Error: ' + e.message, false);
+          sendBtn.disabled = false;
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

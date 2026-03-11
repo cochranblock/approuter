@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- 8-bit dark/black dog -->
+  <rect width="32" height="32" fill="transparent"/>
+  <rect x="2" y="10" width="6" height="12" fill="#2a2a2a"/>
+  <rect x="24" y="10" width="6" height="12" fill="#2a2a2a"/>
+  <rect x="6" y="8" width="20" height="16" fill="#3a3a3a"/>
+  <rect x="10" y="18" width="12" height="8" fill="#2a2a2a"/>
+  <rect x="10" y="12" width="4" height="4" fill="#1a1a1a"/>
+  <rect x="18" y="12" width="4" height="4" fill="#1a1a1a"/>
+  <rect x="11" y="13" width="2" height="2" fill="#fff"/>
+  <rect x="19" y="13" width="2" height="2" fill="#fff"/>
+  <rect x="14" y="20" width="4" height="4" fill="#1a1a1a"/>
+  <rect x="8" y="24" width="16" height="8" fill="#3a3a3a"/>
+  <rect x="8" y="30" width="5" height="2" fill="#2a2a2a"/>
+  <rect x="19" y="30" width="5" height="2" fill="#2a2a2a"/>
+  <rect x="22" y="22" width="4" height="6" fill="#2a2a2a"/>
+</svg>

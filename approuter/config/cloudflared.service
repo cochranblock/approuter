@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel (approuter ingress)
+After=network-online.target approuter.service
+Wants=network-online.target approuter.service
+
+[Service]
+Type=simple
+Environment=CB_ROOT=/home/mcochran/cochranblock
+ExecStart=/home/mcochran/approuter/bin/cloudflared tunnel --config /home/mcochran/.local/share/cochranblock/approuter/data/cloudflared.yml run
+WorkingDirectory=/home/mcochran
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

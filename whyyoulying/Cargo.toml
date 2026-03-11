@@ -1,0 +1,36 @@
+[package]
+name = "whyyoulying"
+version = "0.1.0"
+edition = "2021"
+default-run = "whyyoulying"
+description = "Proactive detection of Labor Category Fraud and Ghost Billing"
+license = "Unlicense"
+repository = "https://github.com/gotemcoach/whyyoulying"
+
+[features]
+default = []
+tests = ["exopack", "dep:tokio"]
+
+[lib]
+name = "whyyoulying"
+path = "src/lib.rs"
+
+[[bin]]
+name = "whyyoulying"
+path = "src/main.rs"
+
+[[bin]]
+name = "whyyoulying-test"
+path = "src/bin/whyyoulying-test.rs"
+required-features = ["tests"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = "1.0"
+anyhow = { workspace = true }
+clap = { workspace = true }
+chrono = { workspace = true }
+tempfile = { workspace = true }
+exopack = { path = "../kova/exopack", optional = true, features = ["triple_sims"] }
+tokio = { workspace = true, optional = true }

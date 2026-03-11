@@ -1,0 +1,7 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: §14 — f49 f50 f51. --test. Same binary.
+globs: ["**/*.rs"]
+alwaysApply: true
+---
+→ §14

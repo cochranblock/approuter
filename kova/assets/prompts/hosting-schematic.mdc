@@ -1,0 +1,40 @@
+---
+description: P22 — Canonical hosting schematic. All products on the internet use approuter start-all + Cloudflare tunnel. Do not diverge.
+alwaysApply: true
+---
+# Hosting Schematic (P22)
+
+**All products hosted on the internet follow this schematic.** Do not diverge when connecting a new product.
+
+## Run Command
+
+```bash
+cargo run -p approuter --release --bin approuter -- start-all
+```
+
+## Architecture
+
+- **approuter** — Reverse proxy on port 8080. Single entry point.
+- **Cloudflare tunnel** — Fetches token via API (CF_TOKEN + CF_ACCOUNT_ID from approuter/.env). No TUNNEL_TOKEN in other projects.
+- **Backends** — Each product runs on its own port; approuter routes by Host header.
+
+## Backend Ports
+
+| Product       | Port | Hostnames                          |
+|---------------|------|------------------------------------|
+| cochranblock  | 8081 | cochranblock.org, www.cochranblock.org |
+| oakilydokily  | 3000 | oakilydokily.com, kaylie.cochranblock.org |
+| rogue-repo    | 3001 | roguerepo.io, www.roguerepo.io     |
+| ronin-sites   | 8000 | ronin-sites.pro, *.ronin-sites.pro  |
+
+## Connecting a New Product
+
+1. Add to approuter `run.rs` start_all (spawn, load .env, set current_dir).
+2. Register with approuter on startup (hostnames + backend_url).
+3. Add DNS CNAME setup in approuter cloudflare (if new domain).
+4. **CF vars** — approuter/.env only. Never put CF_TOKEN or TUNNEL_TOKEN in product .env files.
+
+## Env
+
+- **approuter/.env** — CF_TOKEN, CF_ACCOUNT_ID, CF_TUNNEL_ID (Cloudflare API; tunnel token fetched at runtime).
+- **Product .env** — Project-specific only (DB, secrets). No Cloudflare creds.

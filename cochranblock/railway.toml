@@ -1,0 +1,8 @@
+# Railway Config as Code for cochranblock service.
+# Set service Root Directory to "cochranblock". Build context = repo root.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ALWAYS"

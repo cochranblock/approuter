@@ -1,0 +1,63 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+[package]
+name = "oakilydokily"
+version = "0.1.0"
+edition = "2021"
+default-run = "oakilydokily"
+
+# tests = rough draft. exopack for quantifiable quality. Release strips both.
+# approuter = register with approuter on startup. Release binary only; -test never gets approuter-client.
+[features]
+default = []
+tests = ["exopack", "colored", "scraper"]
+approuter = ["dep:approuter-client"]
+
+[lib]
+name = "oakilydokily"
+path = "src/lib.rs"
+
+# Release binary: product only. Requires --features approuter.
+[[bin]]
+name = "oakilydokily"
+path = "src/main.rs"
+required-features = ["approuter"]
+
+# Test binary: full. AI iterates, then strips for release. Never gets approuter-client.
+[[bin]]
+name = "oakilydokily-test"
+path = "src/bin/oakilydokily-test.rs"
+required-features = ["tests"]
+
+[dependencies]
+axum = { version = "0.7", features = ["form", "json"] }
+tower-http = { version = "0.5", features = ["compression-gzip", "compression-deflate", "trace"] }
+tokio = { workspace = true }
+rust-embed = { version = "8", features = ["compression"] }
+mime_guess = "2"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"] }
+chrono = { workspace = true }
+uuid = { version = "1", features = ["v4"] }
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.21"
+axum-extra = { version = "0.9", features = ["cookie"] }
+time = "0.3"
+urlencoding = "2"
+rand = "0.8"
+serde = { workspace = true }
+serde_json = { workspace = true }
+approuter-client = { path = "../approuter/client", optional = true }
+reqwest = { version = "0.11", features = ["json", "rustls-tls", "blocking"], default-features = false }
+rust-gmail = { version = "0.2", features = ["blocking"] }
+jsonwebtoken = "9"
+dotenvy = "0.15"
+bcrypt = "0.17"
+dirs = "5"
+colored = { version = "2", optional = true }
+scraper = { version = "0.19", optional = true }
+exopack = { path = "../kova/exopack", optional = true, features = ["screenshot", "interface", "triple_sims", "devtools"] }
+
+[dev-dependencies]
+proptest = "1"

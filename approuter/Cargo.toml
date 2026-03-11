@@ -1,0 +1,47 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+[package]
+name = "approuter"
+version = "0.1.0"
+edition = "2021"
+description = "Reverse proxy + app registration for Cloudflare tunnel"
+
+# client = re-export approuter-client for apps. Not needed by approuter binary or -test.
+[features]
+default = []
+client = ["dep:approuter-client"]
+tests = ["exopack"]
+
+[lib]
+name = "approuter"
+path = "src/lib.rs"
+
+[[bin]]
+name = "approuter"
+path = "src/main.rs"
+
+[[bin]]
+name = "approuter-test"
+path = "src/bin/approuter-test.rs"
+required-features = ["tests"]
+
+[dependencies]
+axum = { version = "0.7", features = ["json"] }
+axum-extra = { version = "0.9", features = ["typed-header", "cookie"] }
+clap = { workspace = true, features = ["env"] }
+dotenvy = "0.15"
+reqwest = { version = "0.11", features = ["json", "rustls-tls", "blocking"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+tokio = { workspace = true }
+tower-http = { version = "0.5", features = ["cors", "compression-gzip", "compression-deflate", "trace"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dirs = "5"
+approuter-client = { path = "client", optional = true }
+exopack = { path = "../kova/exopack", optional = true, features = ["interface"] }
+
+[dev-dependencies]
+wiremock = "0.6"
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1", features = ["full"] }

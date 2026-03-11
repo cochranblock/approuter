@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120">
+  <!-- 8-bit right island - mirror style -->
+  <defs>
+    <linearGradient id="sand-r" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8B7355"/>
+      <stop offset="0.5" stop-color="#A08060"/>
+      <stop offset="1" stop-color="#C4A574"/>
+    </linearGradient>
+    <linearGradient id="grass-top-r" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#2a6a2a"/>
+      <stop offset="1" stop-color="#4a8a4a"/>
+    </linearGradient>
+    <linearGradient id="palm-r" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#5a4a2a"/>
+      <stop offset="1" stop-color="#7a6a4a"/>
+    </linearGradient>
+  </defs>
+  <!-- Water -->
+  <rect x="0" y="0" width="160" height="120" fill="#1a3a5a"/>
+  <!-- Island base -->
+  <rect x="0" y="80" width="16" height="40" fill="url(#sand-r)"/>
+  <rect x="16" y="70" width="24" height="50" fill="url(#sand-r)"/>
+  <rect x="40" y="60" width="24" height="60" fill="url(#sand-r)"/>
+  <rect x="64" y="55" width="24" height="65" fill="url(#sand-r)"/>
+  <rect x="88" y="50" width="24" height="70" fill="url(#sand-r)"/>
+  <rect x="112" y="60" width="24" height="60" fill="url(#sand-r)"/>
+  <rect x="136" y="70" width="24" height="50" fill="url(#sand-r)"/>
+  <!-- Grass layer -->
+  <rect x="16" y="55" width="24" height="8" fill="url(#grass-top-r)"/>
+  <rect x="40" y="50" width="24" height="8" fill="url(#grass-top-r)"/>
+  <rect x="64" y="50" width="24" height="8" fill="url(#grass-top-r)"/>
+  <rect x="88" y="45" width="24" height="8" fill="url(#grass-top-r)"/>
+  <rect x="112" y="55" width="24" height="8" fill="url(#grass-top-r)"/>
+  <!-- Palm tree -->
+  <rect x="97" y="35" width="8" height="25" fill="url(#palm-r)"/>
+  <rect x="94" y="25" width="6" height="6" fill="#2a6a2a"/>
+  <rect x="100" y="23" width="6" height="6" fill="#2a6a2a"/>
+  <rect x="96" y="28" width="6" height="6" fill="#2a6a2a"/>
+</svg>

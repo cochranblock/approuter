@@ -1,0 +1,52 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: Ban AI slop — no filler, no buzzwords, no corporate blah
+alwaysApply: true
+---
+
+# AI Slop Eradication
+
+**When writing docs, comments, or summaries:** Cut the slop. Be direct.
+
+## Banned (or use sparingly)
+
+| Slop | Use instead |
+|------|-------------|
+| utilize | use |
+| leverage (as verb) | use, apply — or drop |
+| facilitate | let, enable, support |
+| enhance | improve, add |
+| optimize | improve, tune — or say what |
+| comprehensive | full, complete — or drop |
+| holistic | — (usually drop) |
+| robust | solid, or say what |
+| seamlessly | — (drop) |
+| empower | enable, let |
+| streamline | simplify |
+| scalable / scalability | scales, or "more engineers" |
+| cutting-edge / state-of-the-art | — (drop or say what) |
+| synergy / synergies | — (drop) |
+| paradigm | model, approach |
+| ecosystem | (when technical: Cargo, npm — ok; when filler: drop) |
+| in order to | to |
+| it's worth noting / important to note | — (just state it) |
+| dive into / dive deep | look at, check |
+| our team / our organization | we, or drop |
+| at the end of the day | — (drop) |
+| game-changer | — (say what changed) |
+| happy to help / feel free to | — (or "Ask.") |
+
+## Voice
+
+- **Short.** Bullets over paragraphs.
+- **Active.** "We ship" not "It is shipped."
+- **Concrete.** "Rust, SSDF, SBOM" not "industry best practices."
+- **No throat-clearing.** "Why it matters" not "Why This Matters for [Company]."
+
+## Exception
+
+Technical terms (MOSA, SSDF, SBOM, CMMC) and Kova voice ("We do difficult," "Realize the impossible") — keep. Those aren't slop.
+
+---
+
+Slop eradicated. Ship clean prose.

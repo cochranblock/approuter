@@ -1,0 +1,189 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Approuter API",
+    "description": "Universal bus for apps to register for Cloudflare tunnel domain serving. Register your app with hostnames and a backend URL; the approuter updates the tunnel ingress and DNS CNAMEs. CF_TOKEN is centralized here. Proxied apps: ronin-sites (Host *.ronin-sites.pro).",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {"url": "http://127.0.0.1:8080", "description": "Local (default ROUTER_PORT)"},
+    {"url": "https://manager.ronin-sites.pro", "description": "Ronin Sites (proxied when Host *.ronin-sites.pro)"}
+  ],
+  "paths": {
+    "/approuter/register": {
+      "post": {
+        "summary": "Register an app",
+        "description": "Register or update an app. Adds hostnames to the tunnel ingress, creates DNS CNAMEs for each hostname (zone must exist in Cloudflare), and persists to data/registry.json.",
+        "operationId": "register",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRequest"}}}},
+        "responses": {"200": {"description": "Registered", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "400": {"description": "Invalid request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
+      }
+    },
+    "/approuter/apps": {
+      "get": {
+        "summary": "List registered apps",
+        "description": "Returns all registered apps with their hostnames and backend URLs.",
+        "operationId": "listApps",
+        "responses": {"200": {"description": "List of apps", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/AppRegistration"}}}}}}
+      }
+    },
+    "/approuter/apps/{app_id}": {
+      "delete": {
+        "summary": "Unregister an app",
+        "operationId": "unregister",
+        "parameters": [{"name": "app_id", "in": "path", "required": true, "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Unregistered", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "404": {"description": "App not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
+      }
+    },
+    "/approuter/dns/update-a": {
+      "post": {
+        "summary": "Update DNS A/AAAA record",
+        "operationId": "dnsUpdateA",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DnsUpdateRequest"}}}},
+        "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "502": {"description": "Cloudflare API error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
+      }
+    },
+    "/approuter/openapi.json": {
+      "get": {
+        "summary": "OpenAPI spec",
+        "description": "This document. Point others here for connection instructions.",
+        "operationId": "openapi",
+        "responses": {"200": {"description": "OpenAPI 3.0 JSON", "content": {"application/json": {"schema": {"type": "object"}}}}}
+      }
+    },
+    "/approuter/tunnel": {
+      "get": {
+        "summary": "Tunnel status",
+        "description": "Returns this approuter's cloudflared instance (tunnel_id, pid, running). Use to identify which cloudflared belongs to this router.",
+        "operationId": "tunnelStatus",
+        "responses": {"200": {"description": "Tunnel info", "content": {"application/json": {"schema": {"type": "object", "properties": {"tunnel_id": {"type": "string"}, "pid": {"type": "integer", "nullable": true}, "running": {"type": "boolean"}}}}}}
+      }
+    },
+    "/approuter/tunnel/stop": {
+      "post": {
+        "summary": "Stop tunnel",
+        "description": "Kills only this approuter's cloudflared child. Does not affect other projects' cloudflared instances.",
+        "operationId": "tunnelStop",
+        "responses": {"200": {"description": "Stopped or already stopped", "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "stopped": {"type": "boolean"}}}}}}
+      }
+    },
+    "/approuter/tunnel/ensure": {
+      "post": {
+        "summary": "Ensure cloudflared",
+        "description": "Downloads cloudflared to config_dir/bin/ if missing. No shell scripts needed.",
+        "operationId": "tunnelEnsure",
+        "responses": {"200": {"description": "cloudflared ready"}, "500": {"description": "Download or checksum failed"}}
+      }
+    },
+    "/approuter/tunnel/restart": {
+      "post": {
+        "summary": "Restart tunnel",
+        "description": "Stops cloudflared and spawns a fresh instance.",
+        "operationId": "tunnelRestart",
+        "responses": {"200": {"description": "Restarted"}, "500": {"description": "Spawn failed"}}
+      }
+    },
+    "/approuter/tunnel/fix": {
+      "post": {
+        "summary": "Fix tunnel (1033 etc.)",
+        "description": "Ensures cloudflared binary, stops old instance, spawns fresh. One API call fixes most tunnel errors.",
+        "operationId": "tunnelFix",
+        "responses": {"200": {"description": "Fixed"}, "500": {"description": "Ensure or spawn failed"}}
+      }
+    },
+    "/api/v1/auth/token": {
+      "post": {
+        "tags": ["ronin-sites"],
+        "summary": "Login",
+        "description": "Ronin Sites: authenticate with email/password. Proxied when Host is *.ronin-sites.pro.",
+        "operationId": "roninAuthToken",
+        "requestBody": {"required": true, "content": {"application/x-www-form-urlencoded": {"schema": {"type": "object", "properties": {"username": {"type": "string"}, "password": {"type": "string"}}}}}},
+        "responses": {"200": {"description": "Token + redirect_url"}, "401": {"description": "Invalid credentials"}}
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["ronin-sites"],
+        "summary": "Logout",
+        "operationId": "roninAuthLogout",
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/register": {
+      "post": {
+        "tags": ["ronin-sites"],
+        "summary": "Register",
+        "operationId": "roninRegister",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoninRegisterRequest"}}}},
+        "responses": {"200": {"description": "Created"}, "400": {"description": "Validation error"}}
+      }
+    },
+    "/api/v1/shop-config": {
+      "get": {
+        "tags": ["ronin-sites"],
+        "summary": "Shop config by Host",
+        "description": "Returns shop name, theme, artists. Host header determines shop.",
+        "operationId": "roninShopConfig",
+        "responses": {"200": {"description": "Shop config"}, "404": {"description": "Shop not found"}}
+      }
+    },
+    "/api/v1/public/artist-profile/{profile_id}": {
+      "get": {
+        "tags": ["ronin-sites"],
+        "summary": "Artist profile by ID",
+        "operationId": "roninArtistProfile",
+        "parameters": [{"name": "profile_id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Artist profile"}, "404": {"description": "Not found"}}
+      }
+    },
+    "/api/v1/public/artist-by-host": {
+      "get": {
+        "tags": ["ronin-sites"],
+        "summary": "Artist by Host",
+        "description": "Resolve artist from request Host (e.g. jade.demo.ronin-sites.pro).",
+        "operationId": "roninArtistByHost",
+        "responses": {"200": {"description": "Artist + shop"}, "404": {"description": "Not found"}}
+      }
+    },
+    "/api/v1/manager/shop/my-config": {
+      "get": {
+        "tags": ["ronin-sites"],
+        "summary": "Manager shop config",
+        "security": [{"cookieAuth": []}],
+        "operationId": "roninManagerConfig",
+        "responses": {"200": {"description": "Config"}, "401": {"description": "Unauthorized"}}
+      }
+    },
+    "/api/v1/manager/shop/publish": {
+      "patch": {
+        "tags": ["ronin-sites"],
+        "summary": "Publish shop config",
+        "security": [{"cookieAuth": []}],
+        "operationId": "roninManagerPublish",
+        "responses": {"200": {"description": "Published"}, "401": {"description": "Unauthorized"}}
+      }
+    },
+    "/api/v1/directory/search": {
+      "get": {
+        "tags": ["ronin-sites"],
+        "summary": "Directory search",
+        "operationId": "roninDirectorySearch",
+        "parameters": [{"name": "query", "in": "query", "schema": {"type": "string"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["artist", "manager"]}}],
+        "responses": {"200": {"description": "List of shops/artists"}}
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RegisterRequest": {"type": "object", "required": ["app_id", "hostnames", "backend_url"], "properties": {"app_id": {"type": "string"}, "hostnames": {"type": "array", "items": {"type": "string"}}, "backend_url": {"type": "string"}}},
+      "AppRegistration": {"type": "object", "properties": {"app_id": {"type": "string"}, "hostnames": {"type": "array", "items": {"type": "string"}}, "backend_url": {"type": "string"}}},
+      "DnsUpdateRequest": {"type": "object", "required": ["zone_id", "record_id", "content"], "properties": {"zone_id": {"type": "string"}, "record_id": {"type": "string"}, "content": {"type": "string"}}},
+      "OkResponse": {"type": "object", "properties": {"ok": {"type": "boolean", "example": true}}},
+      "ErrorResponse": {"type": "object", "properties": {"error": {"type": "string"}}},
+      "RoninRegisterRequest": {"type": "object", "required": ["email", "password", "full_name", "shop_name", "subdomain", "plan_tier"], "properties": {"email": {"type": "string"}, "password": {"type": "string"}, "full_name": {"type": "string"}, "shop_name": {"type": "string"}, "subdomain": {"type": "string"}, "plan_tier": {"type": "string", "enum": ["artist", "manager"]}, "profile_image_url": {"type": "string"}}}
+    },
+    "securitySchemes": {
+      "cookieAuth": {"type": "apiKey", "in": "cookie", "name": "access_token", "description": "Bearer token in access_token cookie"}
+    }
+  }
+}

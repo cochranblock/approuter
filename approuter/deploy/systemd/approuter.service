@@ -1,0 +1,18 @@
+[Unit]
+Description=Approuter reverse proxy
+After=network.target
+Before=cochranblock.service oakilydokily.service cloudflared-cochranblock.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/mcochran/cochranblock
+Environment=ROUTER_PORT=8080
+Environment=ROUTER_NO_TUNNEL=true
+Environment=ROUTER_CONFIG_DIR=/home/mcochran/cochranblock
+EnvironmentFile=/home/mcochran/cochranblock/approuter/.env
+ExecStart=/home/mcochran/cochranblock/target/release/approuter --no-tunnel
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

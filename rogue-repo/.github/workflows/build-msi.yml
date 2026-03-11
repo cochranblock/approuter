@@ -1,0 +1,41 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+# Build Rogue Runner MSI on Windows. Trigger: push to main, or manual.
+name: Build MSI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rogue-runner/**'
+      - '.github/workflows/build-msi.yml'
+  workflow_dispatch:
+
+jobs:
+  msi:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build rogue-runner
+        working-directory: .github/msi-workspace
+        run: cargo build -p rogue-runner --release
+
+      - name: Build MSI
+        run: |
+          New-Item -ItemType Directory -Force -Path target\wix\build | Out-Null
+          $TargetDir = (Resolve-Path ".github\msi-workspace\target\release").Path
+          $WixPath = if ($env:WIX) { "$env:WIX\bin" } else { "C:\Program Files (x86)\WiX Toolset v3.14\bin" }
+          if (-not (Test-Path $WixPath)) { choco install wixtoolset -y; $WixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin" }
+          & "$WixPath\candle.exe" -dSourceDir=$TargetDir -out target\wix\build\ -arch x64 rogue-runner\wix\main.wxs
+          & "$WixPath\light.exe" -out target\wix\rogue-runner-windows-x64.msi -b $TargetDir target\wix\build\main.wixobj
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: rogue-runner-msi
+          path: target/wix/rogue-runner-windows-x64.msi

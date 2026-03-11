@@ -1,0 +1,24 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+[package]
+name = "kova-web"
+version = "0.1.0"
+edition = "2021"
+description = "Kova WASM thin client. egui + kova-core."
+
+[lib]
+name = "kova_web"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+kova-core = { path = "../kova-core" }
+egui = "0.29"
+eframe = { version = "0.29", default-features = false, features = ["default_fonts", "glow", "persistence"] }
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement"] }

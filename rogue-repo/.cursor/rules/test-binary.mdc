@@ -1,0 +1,40 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: Rules for the self-evaluating test binary embedded in the main server/binary
+globs: ["**/*.rs"]
+alwaysApply: true
+---
+
+# TEST BINARY RULES
+
+## Architecture
+The test suite is embedded in the same binary as the server/main.
+Activated by `--test` CLI flag. Three sequential phases:
+
+  Phase 1 (f49): Unit — core crate functions directly, no I/O, no processes
+  Phase 2 (f50): Integration — real DB in temp dirs, no network
+  Phase 3 (f51): HTTP — real server on random port, real HTTP requests
+
+## Test Isolation
+- Each integration test owns its TempDir and DB — no shared state
+- HTTP tests bind to random port (OS-assigned)
+- No test depends on previous test state
+- No external network; set env in test setup
+- TempDir cleanup automatic via Drop
+
+## Test Result
+Every test returns a result with: name, passed/failed, duration, optional message.
+Aggregator exits 0 or 1 based on aggregate pass/fail.
+Use colored output (PASS green, FAIL red) for readability.
+
+## HTTP Test Concept
+For f51: spawn real server in background, get base URL and HTTP client with cookie store.
+Make real requests; verify status and content. Server runs as tokio task, not child process.
+
+## What Tests Validate
+Each test exercises REAL code paths — no mocks for mock's sake:
+- Crypto: real encrypt/decrypt, verify round-trip and tamper rejection
+- Password: real hash/verify
+- Session: real create/validate, UUID and expiry
+- DB: real queries, verify persistence
+- HTTP: real requests, verify status codes and body content

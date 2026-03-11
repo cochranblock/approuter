@@ -1,0 +1,16 @@
+# Copyright (c) 2026 The Cochran Block. All rights reserved.
+# Interactive 2D mural: Rust + Macroquad, wasm32 for web.
+
+[package]
+name = "mural-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "mural-wasm"
+path = "src/main.rs"
+
+[dependencies]
+macroquad = "0.4"
+serde = { workspace = true }
+serde_json = { workspace = true }

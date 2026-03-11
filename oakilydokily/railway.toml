@@ -1,0 +1,8 @@
+# Railway Config as Code for oakilydokily service.
+# Set service Root Directory to "oakilydokily". Build context = repo root.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ALWAYS"

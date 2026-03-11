@@ -1,0 +1,19 @@
+{
+  "apps": [
+    {
+      "app_id": "test",
+      "hostnames": [
+        "test.local"
+      ],
+      "backend_url": "http://127.0.0.1:9999"
+    },
+    {
+      "app_id": "roguerepo",
+      "hostnames": [
+        "roguerepo.io",
+        "www.roguerepo.io"
+      ],
+      "backend_url": "http://127.0.0.1:3001"
+    }
+  ]
+}

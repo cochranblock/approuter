@@ -1,0 +1,16 @@
+[Unit]
+Description=Approuter — reverse proxy for cochranblock.org, oakilydokily.com, roguerepo.io, ronin-sites.pro
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=ROUTER_NO_TUNNEL=true
+Environment=ROUTER_CONFIG_DIR=__ROUTER_CONFIG_DIR__
+ExecStart=__APPROUTER_BIN__
+WorkingDirectory=__WORKING_DIR__
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Cloudflare tunnel for cochranblock.org
+After=approuter.service cochranblock.service rogue-repo.service network.target
+Requires=approuter.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/mcochran/cochranblock
+Environment=PATH=/home/mcochran/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/home/mcochran/cochranblock/approuter/.env
+ExecStart=/home/mcochran/cochranblock/approuter/deploy/cloudflared-start.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: §1 §9 §20 — @restart_cb @restart_od @restart_rtr (blocking, !bg). !restart each other.
+alwaysApply: true
+---
+→ §1 §9 §20. Never --bg. Run blocking.

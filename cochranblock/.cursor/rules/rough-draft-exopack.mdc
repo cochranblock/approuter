@@ -1,0 +1,46 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: §21 — Rough draft first. Test binary = exopack forever. Release strips both.
+globs: ["**/*.rs", "**/Cargo.toml"]
+alwaysApply: true
+---
+# §21 Rough Draft → Exopack → Release
+
+## Build Order
+
+1. **Rough draft first** — Build the test binary (`*-test`) first. It contains functionality + tests.
+2. **exopack attached** — The test binary links exopack for quantifiable quality (screenshots, video, mocks, interfaces).
+3. **exopack stays** — exopack is a permanent dependency of the test binary. Never optional.
+4. **Release strips** — The release binary (`*`) strips both tests and exopack. Pure deployment only.
+
+## Cargo Layout
+
+```
+[lib]           — shared logic (both binaries)
+[[bin]] *-test  — required-features = ["tests"]  → exopack, tests, self-reflection
+[[bin]] *       — no tests feature               → no exopack, no test code
+```
+
+## Pattern
+
+| Binary | Contents | Purpose |
+|--------|----------|---------|
+| **Rough draft** (`*-test`) | Functionality + tests + exopack | Quality measurement, CI |
+| **Release** (`*`) | Functionality only | Deployment |
+
+## Cargo.toml
+
+```toml
+[features]
+default = []
+tests = ["exopack", "colored"]
+
+[[bin]]
+name = "cochranblock-test"
+required-features = ["tests"]
+
+[dependencies]
+exopack = { path = "../exopack", optional = true, features = ["screenshot", "interface"] }
+```
+
+Exopack is required when `tests` is enabled. Release binary does not enable `tests`.

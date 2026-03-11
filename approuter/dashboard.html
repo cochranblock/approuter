@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Approuter</title>
+  <style>
+    :root { --bg:#0d1117; --fg:#f0f6fc; --muted:#8b949e; --accent:#58a6ff; --error:#f85149; --ok:#3fb950; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-size: 14px; line-height: 1.5; color: var(--fg); background: var(--bg); margin: 0; padding: 1.5rem; }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem 0; }
+    h2 { font-size: 0.9rem; font-weight: 600; margin: 1.5rem 0 0.5rem 0; color: var(--muted); }
+    section { margin-bottom: 1.5rem; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .row:last-child { margin-bottom: 0; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
+    .badge-ok { background: rgba(63,185,80,0.2); color: var(--ok); }
+    .badge-off { background: rgba(139,148,158,0.2); color: var(--muted); }
+    .badge-err { background: rgba(248,81,73,0.2); color: var(--error); }
+    button { font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.8rem; border: 1px solid #30363d; border-radius: 4px; background: #21262d; color: var(--fg); cursor: pointer; }
+    button:hover { background: #30363d; border-color: #8b949e; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.danger:hover { border-color: var(--error); }
+    .btn { display: inline-flex; gap: 0.5rem; margin-right: 0.5rem; margin-bottom: 0.5rem; }
+    code { font-size: 0.9em; color: var(--accent); background: rgba(88,166,255,0.1); padding: 0.1rem 0.3rem; border-radius: 3px; }
+    .hostnames { font-size: 0.85rem; color: var(--muted); }
+    .msg { margin-top: 0.5rem; font-size: 0.85rem; }
+    .msg.err { color: var(--error); }
+    .msg.ok { color: var(--ok); }
+  </style>
+</head>
+<body>
+  <h1>Approuter</h1>
+  <p style="color:var(--muted);margin:0 0 1rem 0;">Reverse proxy + tunnel. Register apps, manage cloudflared.</p>
+
+  <section>
+    <h2>Tunnel</h2>
+    <div class="card">
+      <div class="row">
+        <span id="tunnel-status">—</span>
+        <span id="tunnel-pid" class="hostnames"></span>
+      </div>
+      <div class="btn">
+        <button id="btn-fix">Fix</button>
+        <button id="btn-restart">Restart</button>
+        <button id="btn-ensure">Ensure</button>
+        <button id="btn-stop" class="danger">Stop</button>
+      </div>
+      <div id="tunnel-msg" class="msg"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Registered apps</h2>
+    <div class="card" id="apps-list">
+      <div class="row" style="color:var(--muted);">Loading…</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>API</h2>
+    <div class="card">
+      <div class="row"><code>GET /approuter/apps</code> — list</div>
+      <div class="row"><code>POST /approuter/register</code> — register</div>
+      <div class="row"><code>DELETE /approuter/apps/:id</code> — unregister</div>
+      <div class="row"><code>GET /approuter/openapi.json</code> — OpenAPI</div>
+    </div>
+  </section>
+
+  <script>
+    const base = '/approuter';
+    function show(msg, ok) {
+      const el = document.getElementById('tunnel-msg');
+      el.textContent = msg;
+      el.className = 'msg ' + (ok ? 'ok' : 'err');
+    }
+    function clearMsg() {
+      document.getElementById('tunnel-msg').textContent = '';
+      document.getElementById('tunnel-msg').className = 'msg';
+    }
+    async function refreshTunnel() {
+      try {
+        const r = await fetch(base + '/tunnel');
+        const j = await r.json();
+        const status = document.getElementById('tunnel-status');
+        const pid = document.getElementById('tunnel-pid');
+        status.innerHTML = j.running
+          ? '<span class="badge badge-ok">Running</span>'
+          : '<span class="badge badge-off">Stopped</span>';
+        pid.textContent = j.pid != null ? 'PID ' + j.pid : '';
+      } catch (e) {
+        document.getElementById('tunnel-status').innerHTML = '<span class="badge badge-err">Error</span>';
+        document.getElementById('tunnel-pid').textContent = e.message;
+      }
+    }
+    async function refreshApps() {
+      try {
+        const r = await fetch(base + '/apps');
+        const apps = await r.json();
+        const list = document.getElementById('apps-list');
+        const arr = Array.isArray(apps) ? apps : (apps.apps || []);
+        if (arr.length === 0) {
+          list.innerHTML = '<div class="row" style="color:var(--muted);">No apps registered</div>';
+          return;
+        }
+        list.innerHTML = arr.map(a =>
+          '<div class="row"><span class="badge badge-ok">' + a.app_id + '</span></div>' +
+          '<div class="row hostnames">' + (a.hostnames || []).join(', ') + '</div>' +
+          '<div class="row"><code>' + a.backend_url + '</code></div>'
+        ).join('');
+      } catch (e) {
+        document.getElementById('apps-list').innerHTML = '<div class="row" style="color:var(--error);">' + e.message + '</div>';
+      }
+    }
+    async function post(path) {
+      clearMsg();
+      const btn = event.target;
+      btn.disabled = true;
+      try {
+        const r = await fetch(base + path, { method: 'POST' });
+        const j = await r.json();
+        const ok = r.ok && (j.ok || j.fixed || j.restarted || j.stopped);
+        show(j.error || j.message || (ok ? 'OK' : 'Failed'), ok);
+        await refreshTunnel();
+      } catch (e) {
+        show(e.message, false);
+      }
+      btn.disabled = false;
+    }
+    document.getElementById('btn-fix').onclick = () => post('/tunnel/fix');
+    document.getElementById('btn-restart').onclick = () => post('/tunnel/restart');
+    document.getElementById('btn-ensure').onclick = () => post('/tunnel/ensure');
+    document.getElementById('btn-stop').onclick = () => post('/tunnel/stop');
+    refreshTunnel();
+    refreshApps();
+    setInterval(refreshTunnel, 10000);
+  </script>
+</body>
+</html>

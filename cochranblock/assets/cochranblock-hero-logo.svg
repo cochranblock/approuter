@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" aria-hidden="true">
+  <!-- Isometric block — ties to CochranBlock, generic shape, no trademark concern -->
+  <defs>
+    <linearGradient id="cb-cube" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d9ff"/>
+      <stop offset="100%" style="stop-color:#00a8cc"/>
+    </linearGradient>
+  </defs>
+  <!-- Top face -->
+  <path d="M60 28 L92 52 L60 76 L28 52 Z" fill="none" stroke="url(#cb-cube)" stroke-width="2.5"/>
+  <!-- Left face -->
+  <path d="M28 52 L60 76 L60 108 L28 84 Z" fill="none" stroke="url(#cb-cube)" stroke-width="2.5" opacity="0.85"/>
+  <!-- Right face -->
+  <path d="M92 52 L60 76 L60 108 L92 84 Z" fill="none" stroke="url(#cb-cube)" stroke-width="2.5" opacity="0.9"/>
+  <!-- Center accent -->
+  <circle cx="60" cy="52" r="3" fill="#00d9ff"/>
+</svg>

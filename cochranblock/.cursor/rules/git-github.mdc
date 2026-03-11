@@ -1,0 +1,13 @@
+<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+---
+description: Senior Rust engineer Git/GitHub patterns — commit/pull often
+alwaysApply: true
+---
+# Git & GitHub — Senior Rust Engineer Patterns
+
+- **Commit often**: Small, atomic commits. One logical change per commit.
+- **Pull before push**: Always `git pull --rebase` (or `git pull`) before `git push`. Avoid merge conflicts.
+- **Commit messages**: Imperative mood, <72 chars. Example: `Add labor category variance detector` not `Added labor category variance detector`.
+- **Branch strategy**: Feature branches for non-trivial work; main stays deployable.
+- **Pre-push**: Run `cargo check` / `cargo test` before pushing. No broken main.
+- **Frequency**: After each logical unit of work — commit. Before starting new work — pull.
