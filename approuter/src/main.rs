@@ -1,4 +1,5 @@
 // Unlicense — cochranblock.org
+// Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 #![allow(non_camel_case_types, non_snake_case, non_upper_case_globals, dead_code)]
 
 mod api;

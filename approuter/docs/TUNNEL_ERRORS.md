@@ -1,4 +1,5 @@
 <!-- Unlicense — cochranblock.org -->
+<!-- Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
 # Cloudflare Tunnel Errors — Fix for Everything
 
 Common Cloudflare tunnel/origin errors and how to fix them for this stack (approuter + cloudflared → localhost:8080).
