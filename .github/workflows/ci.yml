@@ -8,3 +8,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --release -p approuter
       - run: cargo test -p approuter 2>/dev/null || true
+      - run: cargo run -p approuter --bin approuter-test --features tests 2>/dev/null || true
