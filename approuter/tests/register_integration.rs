@@ -47,6 +47,8 @@ async fn register_and_list_apps() {
         .env("ROUTER_PORT", port.to_string())
         .env("ROUTER_BIND", "127.0.0.1")
         .env("ROUTER_NO_TUNNEL", "true")
+        .env_remove("CF_TOKEN")
+        .env_remove("CF_ACCOUNT_ID")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn();

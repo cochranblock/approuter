@@ -247,13 +247,16 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .with_state((registry.clone(), p0.s16, v0.clone(), base_dir.clone()));
 
     let r0 = api_router
-        .merge(proxy::f55(v2, Some(registry)))
+        .merge(proxy::f55(v2, Some(registry.clone())))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http());
 
     let v3 = format!("{}:{}", p0.s17, p0.s16);
     let v4 = tokio::net::TcpListener::bind(&v3).await?;
     tracing::info!("approuter listening on http://{}", v3);
+
+    // Sync tunnel ingress to correct port on startup (prevents stale 55842 etc.)
+    cloudflare::f96a(registry.as_ref(), p0.s16).await;
 
     let v5 = v0.clone();
     let v6 = async move {

@@ -136,6 +136,89 @@ pub async fn f95(
     Ok(())
 }
 
+/// Hostnames to ensure in tunnel ingress on startup. Prevents stale port (e.g. 55842) when cloudflared fetches config.
+const TUNNEL_HOSTNAMES: &[&str] = &[
+    "cochranblock.org",
+    "www.cochranblock.org",
+    "oakilydokily.com",
+    "www.oakilydokily.com",
+    "roguerepo.io",
+    "www.roguerepo.io",
+    "ronin-sites.pro",
+    "www.ronin-sites.pro",
+    "*.ronin-sites.pro",
+];
+
+/// f96a = sync_tunnel_on_startup. Push ingress with correct port on approuter start. Prevents 55842/stale port.
+pub async fn f96a(p0: &crate::registry::t32, p1: u16) {
+    if let Err(e) = f96a_inner(p0, p1).await {
+        tracing::warn!("Tunnel sync on startup failed (non-fatal): {}", e);
+    }
+}
+
+async fn f96a_inner(
+    p0: &crate::registry::t32,
+    p1: u16,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let s8 = std::env::var("CF_TOKEN")
+        .or_else(|_| std::env::var("CLOUDFLARE_API_TOKEN"))
+        .ok();
+    let s34 = std::env::var("CF_ACCOUNT_ID")
+        .or_else(|_| std::env::var("CLOUDFLARE_ACCOUNT_ID"))
+        .ok();
+    if s8.is_none() || s34.is_none() {
+        return Ok(()); // No CF creds — skip (e.g. local dev)
+    }
+    let s8 = s8.unwrap();
+    let s34 = s34.unwrap();
+    let tunnel_id = std::env::var("CF_TUNNEL_ID").unwrap_or_else(|_| C0.into());
+
+    let service = format!("http://127.0.0.1:{}", p1);
+    let reg_hostnames: std::collections::HashSet<String> =
+        p0.hostname_map().into_keys().collect();
+    let hostnames: Vec<String> = if reg_hostnames.is_empty() {
+        TUNNEL_HOSTNAMES.iter().map(|s| (*s).to_string()).collect()
+    } else {
+        let mut out: Vec<String> = reg_hostnames.into_iter().collect();
+        for h in TUNNEL_HOSTNAMES {
+            if !out.iter().any(|x| x.eq_ignore_ascii_case(h)) {
+                out.push((*h).to_string());
+            }
+        }
+        out
+    };
+    let mut ingress: Vec<serde_json::Value> = hostnames
+        .iter()
+        .map(|h| json!({ "hostname": h, "service": &service }))
+        .collect();
+    ingress.push(json!({ "service": "http_status:404" }));
+
+    let url = format!(
+        "{}/client/v4/accounts/{}/cfd_tunnel/{}/configurations",
+        cf_api_base(),
+        s34, tunnel_id
+    );
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    let res = client
+        .put(&url)
+        .header("Authorization", format!("Bearer {}", s8))
+        .header("Content-Type", "application/json")
+        .json(&json!({ "config": { "ingress": ingress } }))
+        .send()
+        .await?;
+    if !res.status().is_success() {
+        return Err(format!("CF API {}: {}", res.status(), res.text().await?).into());
+    }
+    let j: serde_json::Value = res.json().await?;
+    if j.get("success").and_then(|v| v.as_bool()) != Some(true) {
+        return Err(format!("CF API failed: {:?}", j.get("errors")).into());
+    }
+    tracing::info!("Tunnel ingress synced on startup -> {}", service);
+    Ok(())
+}
+
 /// f96 = update_tunnel_from_registry. Registry→ingress. Apps register via API; tunnel syncs from registry.
 pub async fn f96(
     p0: &crate::registry::t32,
