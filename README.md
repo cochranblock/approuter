@@ -1,6 +1,24 @@
 # approuter
 
-Index and router for cochranblock products. **This repo contains approuter only.** Product source lives in separate repos.
+Index and router for cochranblock products.
+
+## Proof of Artifacts
+
+*Wire diagrams for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart LR
+    User[User] --> Approuter[approuter]
+    Approuter --> Cochranblock[cochranblock]
+    Approuter --> Oakilydokily[oakilydokily]
+    Approuter --> RogueRepo[rogue-repo]
+```
+
+---
+
+**This repo contains approuter only.** Product source lives in separate repos.
 
 ## Products (separate repos)
 
