@@ -2,7 +2,7 @@
 # Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 [package]
 name = "approuter"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Reverse proxy + app registration for Cloudflare tunnel"
 
