@@ -1,7 +1,7 @@
 #!/bin/bash
 # cochranblock-stack is thin (approuter only). Products live in separate repos.
 # This script is for local dev when you have a full workspace elsewhere.
-# It syncs products into cochranblock-stack for Railway-style deployment.
+# It syncs products into cochranblock-stack for deployment.
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 STACK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -20,7 +20,7 @@ fi
 
 echo "Workspace: $WS_ROOT"
 echo "Stack: $STACK_ROOT"
-echo "Syncing products (for local Railway-style deploy; not committed to cochranblock-stack repo)..."
+echo "Syncing products (for local deploy; not committed to cochranblock-stack repo)..."
 
 SYNC_DIRS="approuter cochranblock oakilydokily rogue-repo kova kova-core kova-web vendor whyyoulying wowasticker Cargo.toml Cargo.lock"
 for d in $SYNC_DIRS; do

@@ -1,4 +1,4 @@
-# Next Steps for Railway Deployment
+# Next Steps for Deployment
 
 ## Done
 
@@ -22,18 +22,9 @@ cd /Users/mcochran/cochranblock-stack
 git push -u origin main
 ```
 
-### 3. Set up Railway
+### 3. Deploy
 
-1. Go to [railway.com](https://railway.com) and sign in with GitHub
-2. New Project → Deploy from GitHub → select **cochranblock/cochranblock-stack**
-3. Add 4 services (or use "Add Service" for each):
-   - **approuter** — Root Directory: `approuter`
-   - **cochranblock** — Root Directory: `cochranblock`
-   - **oakilydokily** — Root Directory: `oakilydokily`
-   - **rogue-repo** — Root Directory: `rogue-repo`
-4. Add Postgres plugin, link to rogue-repo service
-5. Set env vars per [approuter/docs/RAILWAY.md](approuter/docs/RAILWAY.md)
-6. Attach custom domains to approuter: cochranblock.org, roguerepo.io, kaylie.cochranblock.org, oakilydokily.com
+Deploy approuter and backends to gd (Debian), Docker, or your preferred host. See [approuter/docs/ROUTER.md](approuter/docs/ROUTER.md) and [approuter/docs/TUNNEL_SYSTEMD.md](approuter/docs/TUNNEL_SYSTEMD.md) for gd + Cloudflare tunnel setup.
 
 ### 4. Rebuild monorepo after workspace changes
 
@@ -46,18 +37,16 @@ git add -A && git commit -m "Sync from workspace" && git push
 
 ## Optional: Automated setup via API
 
-No browser or `gh` CLI needed. Use tokens:
+No browser or `gh` CLI needed. Use token:
 
 ```bash
 export GITHUB_TOKEN=ghp_xxx   # github.com → Settings → Developer settings → PAT (repo scope)
-export RAILWAY_TOKEN=xxx      # railway.app → Account → Tokens
 ./scripts/setup-via-api.sh
 ```
 
 This script will:
 1. Create `cochranblock/cochranblock` and `cochranblock/rogue-repo` via GitHub API
 2. Push the monorepo
-3. Create a Railway project linked to the repo via Railway GraphQL API
 
 `jq` optional (nicer output).
 

@@ -23,10 +23,6 @@ Index and router for cochranblock products. **This repo contains approuter only.
 cargo build -p approuter
 ```
 
-## Railway
-
-Deploy each product from its own repo. Approuter runs here; backends (cochranblock, oakilydokily, rogue-repo) connect via Railway private networking. See [approuter/docs/RAILWAY.md](approuter/docs/RAILWAY.md).
-
 ## Local development
 
 Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_PORTFOLIO_URL`, `ROUTER_KAYLIE_HOST`).
