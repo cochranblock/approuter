@@ -8,7 +8,7 @@
 **/bin/cloudflared.exe
 **/.wrangler/
 
-# Products live in their own repos; cochranblock-stack points to them
+# Products live in their own repos; approuter points to them
 /cochranblock
 /oakilydokily
 /rogue-repo

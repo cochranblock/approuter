@@ -1,4 +1,4 @@
-# cochranblock-stack
+# approuter
 
 Index and router for cochranblock products. **This repo contains approuter only.** Product source lives in separate repos.
 
