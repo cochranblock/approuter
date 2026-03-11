@@ -1,7 +1,0 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
----
-description: §16 — Test binary=CI. compile f49 f50 f51. 0=green 1=red.
-globs: ["**/*.rs", "**/*.toml", "**/*.yml", "**/*.yaml"]
-alwaysApply: true
----
-→ §16

@@ -1,4 +1,0 @@
-# Copyright (c) 2026 The Cochran Block. All rights reserved.
-[workspace]
-resolver = "2"
-members = ["rogue-repo", "rogue-runner"]

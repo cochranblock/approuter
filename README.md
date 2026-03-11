@@ -1,21 +1,32 @@
 # cochranblock-stack
 
-Monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova, and related projects. Railway deployment.
+Index and router for cochranblock products. **This repo contains approuter only.** Product source lives in separate repos.
 
-## Build from workspace
+## Products (separate repos)
+
+| Product | Repo | Description |
+|---------|------|-------------|
+| **cochranblock** | [cochranblock/cochranblock](https://github.com/cochranblock/cochranblock) | Portfolio site (cochranblock.org) |
+| **oakilydokily** | [cochranblock/oakilydokily](https://github.com/cochranblock/oakilydokily) | Hero site with mural |
+| **rogue-repo** | [cochranblock/rogue-repo](https://github.com/cochranblock/rogue-repo) | Software repo + ISO 8583 |
+| **kova** | [cochranblock/kova](https://github.com/cochranblock/kova) | Augment engine |
+| **whyyoulying** | [cochranblock/whyyoulying](https://github.com/cochranblock/whyyoulying) | Labor fraud detection |
+| **wowasticker** | [cochranblock/wowasticker](https://github.com/cochranblock/wowasticker) | Student goals app |
+
+## This repo
+
+- **approuter** — Reverse proxy + app registration for Cloudflare tunnel. Routes traffic to the products above.
+
+## Build
 
 ```bash
-./scripts/build-monorepo.sh /path/to/workspace/root
+cargo build -p approuter
 ```
 
-## Railway setup
+## Railway
 
-1. Create project at [railway.com](https://railway.com)
-2. Add 4 services + Postgres
-3. Connect this repo (cochranblock/cochranblock)
-4. Set Root Directory per service: approuter, cochranblock, oakilydokily, rogue-repo
-5. Add env vars per [approuter/docs/RAILWAY.md](approuter/docs/RAILWAY.md)
+Deploy each product from its own repo. Approuter runs here; backends (cochranblock, oakilydokily, rogue-repo) connect via Railway private networking. See [approuter/docs/RAILWAY.md](approuter/docs/RAILWAY.md).
 
-## GitHub
+## Local development
 
-Push to cochranblock/cochranblock-stack (create repo first if needed).
+Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_PORTFOLIO_URL`, `ROUTER_KAYLIE_HOST`).

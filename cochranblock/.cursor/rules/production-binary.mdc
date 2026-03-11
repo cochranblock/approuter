@@ -1,7 +1,0 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
----
-description: §17 — Same binary embed. Core !axum. AES Argon2. ctrl_c graceful.
-globs: ["**/*.rs", "**/Cargo.toml"]
-alwaysApply: true
----
-→ §17

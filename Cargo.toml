@@ -2,16 +2,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "kova-core",
-    "kova-web",
-    "cochranblock",
     "approuter",
     "approuter/client",
-    "oakilydokily",
-    "oakilydokily/mural-wasm",
-    "kova",
-    "whyyoulying",
-    "wowasticker",
 ]
 
 [workspace.dependencies]
@@ -36,10 +28,3 @@ panic = "abort"
 # Servers: faster runtime (opt-level 3). CLI/tools keep "z" for size.
 [profile.release.package.approuter]
 opt-level = 3
-[profile.release.package.cochranblock]
-opt-level = 3
-[profile.release.package.oakilydokily]
-opt-level = 3
-
-[patch.crates-io]
-xml5ever = { path = "vendor/xml5ever" }

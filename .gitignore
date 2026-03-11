@@ -6,3 +6,16 @@
 !.env.example
 **/bin/cloudflared
 **/bin/cloudflared.exe
+**/.wrangler/
+
+# Products live in their own repos; cochranblock-stack points to them
+/cochranblock
+/oakilydokily
+/rogue-repo
+/kova
+/kova-core
+/kova-web
+/whyyoulying
+/wowasticker
+/vendor
+/docs

@@ -1,8 +1,0 @@
----
-description: §whyyoulying — short commit messages when committing
-alwaysApply: true
----
-When committing code changes in whyyoulying (/home/mcochran/whyyoulying):
-- Generate a short commit message from the diff
-- Use a prompt: summarize changes in one concise line (imperative mood, <72 chars)
-- Example: "Add KOVA key config" not "Added KOVA key configuration to the project"

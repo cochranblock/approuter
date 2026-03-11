@@ -1,9 +1,0 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
----
-description: §3 — Kova dev standards. sled, bincode, zstd, thiserror, tokio.
-alwaysApply: true
----
-→ §3. Full standards: /home/mcochran/.cursor/rules/kova.mdc.
-
-# Kova Development Standards (Summary)
-Storage: sled only. Data: bincode + zstd. Zero-copy sled::IVec. thiserror, no unwrap/expect in lib. tokio async. /// doc = Why. Large data → memmap2. Project: Kova (Sentinel). Tone: technical precise efficient.

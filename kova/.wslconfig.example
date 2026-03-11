@@ -1,5 +1,0 @@
-# Copy to C:\Users\<YourUsername>\.wslconfig
-# Then run: wsl --shutdown
-
-[wsl2]
-guiApplications=true

@@ -1,8 +1,0 @@
-# Railway Config as Code for rogue-repo service.
-# Set service Root Directory to "rogue-repo". Build context = repo root (parent).
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
-
-[deploy]
-restartPolicyType = "ALWAYS"

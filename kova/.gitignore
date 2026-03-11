@@ -1,6 +1,0 @@
-/target/
-.env
-*.swp
-*.swo
-.DS_Store
-*.log

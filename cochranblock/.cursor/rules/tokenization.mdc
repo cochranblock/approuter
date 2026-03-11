@@ -1,7 +1,0 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
----
-description: §13 — compression_map f t s E. Preserved std. globs **/*.rs
-globs: ["**/*.rs"]
-alwaysApply: true
----
-→ §13
