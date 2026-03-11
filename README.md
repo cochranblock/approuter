@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/cochranblock/approuter/main/approuter/assets/logo.svg" alt="approuter" width="64">
+</p>
+
 # approuter
 
 Index and router for cochranblock products.
