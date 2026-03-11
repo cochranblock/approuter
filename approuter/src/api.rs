@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! f98 f99 f100 f101 f103 f104 f105 f106 f107 f108 — approuter API. register, list, unregister, dns_update_a, openapi, tunnel status/stop/ensure/restart/fix. t35=ApiState.
 
 use axum::{

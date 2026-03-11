@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! t31 t32 — app registry. hostname→backend_url. data/registry.json (approuter-owned).
 
 use serde::{Deserialize, Serialize};

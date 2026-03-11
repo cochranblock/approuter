@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+<!-- Unlicense — cochranblock.org -->
 # Cloudflare Tunnel via systemd (hardened)
 
 Approuter and cloudflared as systemd user services. Startup order: approuter first, then cloudflared.

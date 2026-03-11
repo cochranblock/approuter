@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! f90 f91 f92 f109 — cloudflared child of approuter. Config generated in data/cloudflared.yml.
 
 use crate::registry;

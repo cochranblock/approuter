@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! Integration test: spawn approuter, POST /approuter/register, GET /approuter/apps, assert app listed.
 
 use std::net::TcpListener;

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! approuter — reverse proxy + client for self-registration.
 //! Use `approuter::{f116, RegisterConfig}` when client feature is enabled.
 

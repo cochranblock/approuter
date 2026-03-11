@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+<!-- Unlicense — cochranblock.org -->
 # App Router (legacy: PORTFOLIO_ROUTER)
 
 See [ROUTER.md](ROUTER.md) for current docs. This file kept for reference.

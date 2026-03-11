@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! Mock Cloudflare API with wiremock. Test registration flow when CF returns success.
 
 use std::net::TcpListener;

@@ -1,4 +1,4 @@
-# Copyright (c) 2026 The Cochran Block. All rights reserved.
+# Unlicense — cochranblock.org
 # Client lib for self-registering with approuter. Lives in approuter context.
 
 [package]

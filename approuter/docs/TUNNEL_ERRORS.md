@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+<!-- Unlicense — cochranblock.org -->
 # Cloudflare Tunnel Errors — Fix for Everything
 
 Common Cloudflare tunnel/origin errors and how to fix them for this stack (approuter + cloudflared → localhost:8080).

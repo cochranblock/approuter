@@ -1,4 +1,4 @@
-# Copyright (c) 2026 The Cochran Block. All rights reserved.
+# Unlicense — cochranblock.org
 [workspace]
 resolver = "2"
 members = [

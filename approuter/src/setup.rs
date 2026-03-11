@@ -1,4 +1,4 @@
-// Copyright (c) 2026 The Cochran Block. All rights reserved.
+// Unlicense — cochranblock.org
 //! f114–f137 setup commands. Stub until full implementation restored.
 
 use std::path::Path;

@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+<!-- Unlicense — cochranblock.org -->
 # App Router
 
 Reverse proxy that routes traffic to the correct backend based on URL (Host header or path).

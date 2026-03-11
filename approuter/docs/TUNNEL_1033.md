@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
+<!-- Unlicense — cochranblock.org -->
 # Fixing Cloudflare Tunnel Error 1033
 
 **Error 1033** = Cloudflare cannot find a healthy `cloudflared` instance. The tunnel is down, inactive, or degraded.
