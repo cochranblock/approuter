@@ -3,6 +3,29 @@
 
 1000-level endless runner. Procedural generation, offline, cross-platform.
 
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart LR
+    Load[Load] --> RunLoop[Run Loop]
+    RunLoop --> ProcGen[Procedural Gen]
+    ProcGen --> RunLoop
+```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| ![Gameplay](docs/artifacts/screenshot-gameplay.png) | In-game screenshot |
+
+### Demo
+
+*Add `docs/artifacts/demo-gameplay.gif` for 10–15s gameplay; optional `demo-gameplay.mp4` for longer.*
+
 ## Targets
 
 | Platform | Build | Notes |

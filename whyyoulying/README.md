@@ -6,6 +6,30 @@ Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
 
 ---
 
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart LR
+    Ingest[ingest] --> Labor[Labor Detectors]
+    Ingest --> Ghost[Ghost Detectors]
+    Labor --> Alerts[Alerts]
+    Ghost --> Alerts
+    Alerts --> Export[export-referral]
+```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| ![Run output](docs/artifacts/screenshot-run.png) | Terminal output of `run` |
+| ![Export](docs/artifacts/screenshot-export.png) | Sample `export-referral` output |
+
+---
+
 ## Quick Start
 
 ```bash

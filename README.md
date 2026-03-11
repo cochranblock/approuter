@@ -2,6 +2,28 @@
 
 Monorepo for Railway deployment: approuter, cochranblock, oakilydokily, rogue-repo.
 
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart TB
+    subgraph Services
+        Approuter[approuter]
+        Cochranblock[cochranblock]
+        Oakilydokily[oakilydokily]
+        RogueRepo[rogue-repo]
+    end
+    Postgres[(Postgres)]
+    User[User] --> Approuter
+    Approuter --> Cochranblock
+    Approuter --> Oakilydokily
+    Approuter --> RogueRepo
+    RogueRepo --> Postgres
+```
+
 ## Build from workspace
 
 ```bash

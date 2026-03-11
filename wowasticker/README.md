@@ -2,7 +2,23 @@
 
 Pure Rust, offline-first mobile app for student behavioral goals. Local AI dictation via Candle Whisper, SQLite persistence, thumb-zone optimized UI.
 
-## Architecture
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture (Mermaid)
+
+```mermaid
+flowchart TB
+    UI[ui.rs Dioxus] --> DB[db.rs rusqlite]
+    UI --> Audio[audio.rs cpal]
+    UI --> AI[ai.rs Candle]
+    Audio --> AI
+    AI --> DB
+    DB --> SQLite[(wowasticker.db)]
+```
+
+### Wire / Architecture (ASCII)
 
 ```
                     ┌─────────────────────────────────────────┐
@@ -34,6 +50,17 @@ Pure Rust, offline-first mobile app for student behavioral goals. Local AI dicta
 
 Wire flow: User tap ─► audio capture ─► transcribe ─► parse ─► db write ─► UI refresh
 ```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| ![ScheduleCard](docs/artifacts/screenshot-schedule-card.png) | ScheduleCard UI |
+| ![Dictation](docs/artifacts/screenshot-dictation.png) | Dictation flow |
+
+### Demo
+
+*Add `docs/artifacts/demo-dictation.gif` for tap → dictate → sticker update.*
 
 ## Build
 

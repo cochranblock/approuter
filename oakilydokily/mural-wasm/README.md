@@ -2,6 +2,31 @@
 
 High-performance 2D interactive mural targeting `wasm32-unknown-unknown` for web.
 
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart LR
+    JS[JS Bridge] --> WASM[WASM Macroquad]
+    WASM --> Render[Render Loop]
+    WASM --> PetStates[Pet States]
+    PetStates --> Render
+```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| ![Mural](docs/artifacts/screenshot-mural.png) | Mural with pets |
+| ![Scenes](docs/artifacts/screenshot-scenes.png) | Scroll-triggered scenes |
+
+### Demo
+
+*Add `docs/artifacts/demo-pets.gif` for pets wandering, interaction, guinea pig kiss.*
+
 ## Build
 
 ```bash

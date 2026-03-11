@@ -3,6 +3,27 @@
 
 Sovereign, high-security software repository and ISO 8583 payment engine. 100% Rust.
 
+## Proof of Artifacts
+
+*Wire diagrams, screenshots, and demos for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart TB
+    RepoAPI[repo-api] --> RepoVault[repo-vault]
+    RepoAPI --> RepoSwitch[repo-switch]
+    RepoAPI --> RepoLedger[repo-ledger]
+    RepoLedger --> Postgres[(PostgreSQL)]
+    Client[Client] --> RepoAPI
+```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| ![API response](docs/artifacts/screenshot-buy-bucks.png) | `/buy-bucks` or curl output |
+
 ## Workspace Crates
 
 - **repo-vault**: AES-256-GCM encryption, PAN vaulting (Radioactive Data policy)
