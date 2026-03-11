@@ -6,7 +6,7 @@
 
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::Duration;
@@ -26,7 +26,7 @@ fn load_env_into_process(path: &std::path::Path) {
             let k = k.trim();
             let v = v.trim().trim_matches('"');
             if !k.is_empty() && !v.is_empty() {
-                let _ = env::set_var(k, v);
+                env::set_var(k, v);
             }
         }
     }
@@ -45,10 +45,10 @@ fn load_cf_env_from(path: &std::path::Path) {
         }
         if let Some((k, v)) = line.split_once('=') {
             let k = k.trim();
-            if CF_KEYS.iter().any(|&cf| cf == k) {
+            if CF_KEYS.contains(&k) {
                 let v = v.trim().trim_matches('"');
                 if !v.is_empty() {
-                    let _ = env::set_var(k, v);
+                    env::set_var(k, v);
                 }
             }
         }
@@ -86,15 +86,12 @@ fn ronin_root() -> Option<PathBuf> {
         .filter(|p| p.exists())
         .or_else(|| {
             let root = cb_root();
-            for p in [
+            [
                 root.join("ronin-sites"),
                 root.parent().unwrap_or(&root).join("ronin-sites"),
-            ] {
-                if p.exists() {
-                    return Some(p);
-                }
-            }
-            None
+            ]
+            .into_iter()
+            .find(|p| p.exists())
         })
 }
 
@@ -106,12 +103,9 @@ fn rogue_repo_root() -> Option<PathBuf> {
         .filter(|p| p.exists())
         .or_else(|| {
             let root = cb_root();
-            for p in [root.join("rogue-repo"), root.parent().unwrap_or(&root).join("rogue-repo")] {
-                if p.exists() {
-                    return Some(p);
-                }
-            }
-            None
+            [root.join("rogue-repo"), root.parent().unwrap_or(&root).join("rogue-repo")]
+                .into_iter()
+                .find(|p| p.exists())
         })
 }
 
@@ -141,7 +135,7 @@ fn workspace_root_from_exe() -> Option<PathBuf> {
 }
 
 /// cf_token_check — Evaluate each token's capabilities (verify, tunnel token).
-pub fn cf_token_check(root: &PathBuf) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn cf_token_check(root: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     load_cf_env_from(&root.join("approuter").join(".env"));
     let account_id = env_opt("CF_ACCOUNT_ID").or_else(|| env_opt("CLOUDFLARE_ACCOUNT_ID"))
         .unwrap_or_else(|| "aabaf34b42d0d042e3e570903b117b08".into());

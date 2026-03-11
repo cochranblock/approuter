@@ -890,6 +890,6 @@ pub async fn get_tunnel_token() -> Result<String, Box<dyn Error + Send + Sync>> 
                 .and_then(|r| r.get("token"))
                 .and_then(|t| t.as_str())
         })
-        .ok_or_else(|| "Cloudflare token response missing result or result.token")?;
+        .ok_or("Cloudflare token response missing result or result.token")?;
     Ok(token.to_string())
 }
