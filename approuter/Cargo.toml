@@ -39,7 +39,7 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dirs = "5"
 approuter-client = { path = "client", optional = true }
-exopack = { path = "../kova/exopack", optional = true, features = ["interface"] }
+exopack = { git = "https://github.com/cochranblock/exopack", optional = true, features = ["interface"] }
 
 [dev-dependencies]
 wiremock = "0.6"
