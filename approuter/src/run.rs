@@ -234,8 +234,8 @@ pub fn start_all(open_browser_flag: bool) -> Result<(), Box<dyn std::error::Erro
         .env("ROUTER_PORT", &port)
         .env("ROUTER_NO_TUNNEL", "true")
         .env("ROUTER_CONFIG_DIR", &root);
-    if let Some(v) = env_opt("ROUTER_KAYLIE_HOST") {
-        approuter_cmd.env("ROUTER_KAYLIE_HOST", v);
+    if let Some(v) = env_opt("ROUTER_OAKILYDOKILY_HOST") {
+        approuter_cmd.env("ROUTER_OAKILYDOKILY_HOST", v);
     }
     if let Some(v) = env_opt("ROUTER_ROGUEREPO_HOST") {
         approuter_cmd.env("ROUTER_ROGUEREPO_HOST", v);

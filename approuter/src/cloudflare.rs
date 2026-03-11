@@ -408,7 +408,6 @@ pub async fn f53(a: &t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>
                 { "hostname": "www.cochranblock.org", "service": x19 },
                 { "hostname": "roguerepo.io", "service": x19 },
                 { "hostname": "www.roguerepo.io", "service": x19 },
-                { "hostname": "kaylie.cochranblock.org", "service": x19 },
                 { "hostname": "oakilydokily.com", "service": x19 },
                 { "hostname": "www.oakilydokily.com", "service": x19 },
                 { "hostname": "ronin-sites.pro", "service": x19 },
@@ -508,7 +507,7 @@ pub async fn f53(a: &t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>
         }
     }
 
-    tracing::info!("Done. Ensure approuter is running and ROUTER_KAYLIE_HOST=oakilydokily.com");
+    tracing::info!("Done. Ensure approuter is running and ROUTER_OAKILYDOKILY_HOST=oakilydokily.com");
     Ok(())
 }
 

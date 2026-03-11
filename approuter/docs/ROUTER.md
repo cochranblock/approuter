@@ -1,5 +1,5 @@
 <!-- Copyright (c) 2026 The Cochran Block. All rights reserved. -->
-# Portfolio Router
+# App Router
 
 Reverse proxy that routes traffic to the correct backend based on URL (Host header or path).
 
@@ -7,18 +7,18 @@ Reverse proxy that routes traffic to the correct backend based on URL (Host head
 
 ```
 Cloudflare Tunnel → router:8080 → cochranblock:443 (cochranblock.org)
-                                    └──→ oakilydokily:3000 (kaylie.cochranblock.org or /kaylie)
+                                    └──→ oakilydokily:3000 (oakilydokily.com or /oakilydokily)
 ```
 
 ## Routing Modes
 
 ### Host-based (recommended)
 
-Set `ROUTER_KAYLIE_HOST=kaylie.cochranblock.org`. Requests with that Host header go to Kaylie; all others go to cochranblock.
+Set `ROUTER_OAKILYDOKILY_HOST=oakilydokily.com`. Requests with that Host header go to oakilydokily; all others go to cochranblock.
 
 ### Path-based
 
-Set `ROUTER_KAYLIE_PATH=/kaylie`. Requests to `/kaylie` or `/kaylie/*` go to Kaylie; the path prefix is stripped when forwarding.
+Set `ROUTER_OAKILYDOKILY_PATH=/oakilydokily`. Requests to `/oakilydokily` or `/oakilydokily/*` go to oakilydokily; the path prefix is stripped when forwarding.
 
 ## Env Vars
 
@@ -26,10 +26,10 @@ Set `ROUTER_KAYLIE_PATH=/kaylie`. Requests to `/kaylie` or `/kaylie/*` go to Kay
 |-----|---------|-------------|
 | ROUTER_PORT | 8080 | Port the router listens on |
 | ROUTER_BIND | 127.0.0.1 | Bind address |
-| ROUTER_PORTFOLIO_URL | https://127.0.0.1:443 | cochranblock backend |
-| ROUTER_KAYLIE_URL | http://127.0.0.1:3000 | Kaylie backend |
-| ROUTER_KAYLIE_HOST | — | Hostname for Kaylie (Host-based routing) |
-| ROUTER_KAYLIE_PATH | — | Path prefix for Kaylie (path-based routing) |
+| ROUTER_COCHRANBLOCK_URL | https://127.0.0.1:443 | cochranblock backend |
+| ROUTER_OAKILYDOKILY_URL | http://127.0.0.1:3000 | oakilydokily backend |
+| ROUTER_OAKILYDOKILY_HOST | — | Hostname for oakilydokily (Host-based routing) |
+| ROUTER_OAKILYDOKILY_PATH | — | Path prefix for oakilydokily (path-based routing) |
 | ROUTER_RONIN_URL | http://127.0.0.1:8000 | Ronin Sites backend |
 | ROUTER_RONIN_HOST | — | Comma-separated hostnames for Ronin (exact match) |
 | ROUTER_RONIN_SUFFIX | — | Suffix match (e.g. .ronin-sites.pro) — any host ending with this routes to Ronin |
@@ -67,7 +67,7 @@ PORT=443 BIND=0.0.0.0 cargo run -p cochranblock -- --go-live
 BIND=127.0.0.1 PORT=3000 cargo run -p oakilydokily
 
 # Terminal 3: router (Host-based)
-ROUTER_KAYLIE_HOST=kaylie.cochranblock.org cargo run -p approuter
+ROUTER_OAKILYDOKILY_HOST=oakilydokily.com cargo run -p approuter
 
 # Update tunnel (one-time)
 CF_ACCOUNT_ID=xxx CF_TOKEN=xxx cargo run -p approuter -- --update-tunnel
@@ -97,7 +97,7 @@ Apps can register themselves with the router. The router holds **CF_TOKEN** (and
 ```bash
 curl -X POST http://127.0.0.1:8080/approuter/register \
   -H "Content-Type: application/json" \
-  -d '{"app_id":"kaylie","hostnames":["kaylie.cochranblock.org","oakilydokily.com","www.oakilydokily.com"],"backend_url":"http://127.0.0.1:3000"}'
+  -d '{"app_id":"oakilydokily","hostnames":["oakilydokily.com","www.oakilydokily.com"],"backend_url":"http://127.0.0.1:3000"}'
 ```
 
 - **app_id**: Unique identifier (used for unregister).
@@ -110,7 +110,7 @@ On success, the router updates the Cloudflare tunnel ingress so these hostnames 
 
 ```bash
 curl http://127.0.0.1:8080/approuter/apps
-curl -X DELETE http://127.0.0.1:8080/approuter/apps/kaylie
+curl -X DELETE http://127.0.0.1:8080/approuter/apps/oakilydokily
 ```
 
 ### DNS API (for apps needing dynamic IP)

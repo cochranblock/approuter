@@ -57,8 +57,8 @@ pub fn f126() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
-    if let Some(v) = env_opt("ROUTER_KAYLIE_HOST") {
-        cmd.env("ROUTER_KAYLIE_HOST", v);
+    if let Some(v) = env_opt("ROUTER_OAKILYDOKILY_HOST") {
+        cmd.env("ROUTER_OAKILYDOKILY_HOST", v);
     }
     if let Some(v) = env_opt("ROUTER_ROGUEREPO_HOST") {
         cmd.env("ROUTER_ROGUEREPO_HOST", v);

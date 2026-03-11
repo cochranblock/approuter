@@ -70,13 +70,13 @@ pub struct t28 {
     pub s16: u16,
     #[arg(long, env = "ROUTER_BIND", default_value = "127.0.0.1")]
     pub s17: String,
-    #[arg(long, env = "ROUTER_PORTFOLIO_URL", default_value = "https://127.0.0.1:443")]
+    #[arg(long, env = "ROUTER_COCHRANBLOCK_URL", default_value = "https://127.0.0.1:443")]
     pub s35: String,
-    #[arg(long, env = "ROUTER_KAYLIE_URL", default_value = "http://127.0.0.1:3000")]
+    #[arg(long, env = "ROUTER_OAKILYDOKILY_URL", default_value = "http://127.0.0.1:3000")]
     pub s36: String,
-    #[arg(long, env = "ROUTER_KAYLIE_HOST")]
+    #[arg(long, env = "ROUTER_OAKILYDOKILY_HOST")]
     pub s37: Option<String>,
-    #[arg(long, env = "ROUTER_KAYLIE_PATH")]
+    #[arg(long, env = "ROUTER_OAKILYDOKILY_PATH")]
     pub s38: Option<String>,
     #[arg(long, env = "ROUTER_ROGUEREPO_URL", default_value = "http://127.0.0.1:3001")]
     pub s42: String,
