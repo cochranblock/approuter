@@ -35,7 +35,7 @@ async fn run_smoke() -> bool {
     let child = Command::new(&approuter_bin)
         .env("ROUTER_PORT", port.to_string())
         .env("ROUTER_BIND", "127.0.0.1")
-        .env("ROUTER_NO_TUNNEL", "1")
+        .env("ROUTER_NO_TUNNEL", "true")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn();
