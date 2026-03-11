@@ -4,7 +4,7 @@
 
 - Monorepo built at `/Users/mcochran/cochranblock-stack` with full workspace
 - Initial commit created
-- Remote set to `git@github.com:cochranblock/cochranblock.git`
+- Remote set to `git@github.com:cochranblock/cochranblock-stack.git`
 
 ## You Need To Do
 
@@ -12,7 +12,7 @@
 
 Create these on GitHub (github.com/new or org cochranblock):
 
-- **cochranblock/cochranblock** (public) — monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova
+- **cochranblock/cochranblock-stack** (public) — monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova
 - **cochranblock/rogue-repo** (public, for standalone rogue-repo pushes)
 
 ### 2. Push the monorepo
@@ -25,7 +25,7 @@ git push -u origin main
 ### 3. Set up Railway
 
 1. Go to [railway.com](https://railway.com) and sign in with GitHub
-2. New Project → Deploy from GitHub → select **cochranblock/cochranblock**
+2. New Project → Deploy from GitHub → select **cochranblock/cochranblock-stack**
 3. Add 4 services (or use "Add Service" for each):
    - **approuter** — Root Directory: `approuter`
    - **cochranblock** — Root Directory: `cochranblock`
@@ -66,6 +66,6 @@ This script will:
 If you install `gh` (`brew install gh`) and run `gh auth login`, you can create repos from the CLI:
 
 ```bash
-gh repo create cochranblock/cochranblock --public --source=/Users/mcochran/cochranblock-stack --push
+gh repo create cochranblock/cochranblock-stack --public --source=/Users/mcochran/cochranblock-stack --push
 gh repo create cochranblock/rogue-repo --public
 ```

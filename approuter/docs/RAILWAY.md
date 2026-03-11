@@ -5,7 +5,7 @@ Deploy the cochranblock monorepo (approuter, cochranblock, oakilydokily, rogue-r
 ## Prerequisites
 
 - Railway account (connect via GitHub OAuth — no token needed)
-- GitHub repo cochranblock/cochranblock with the full workspace. The Dockerfiles require build context = workspace root (parent of approuter, cochranblock, oakilydokily, rogue-repo, kova, vendor, etc.)
+- GitHub repo cochranblock/cochranblock-stack with the full workspace. The Dockerfiles require build context = workspace root (parent of approuter, cochranblock, oakilydokily, rogue-repo, kova, vendor, etc.)
 
 ## Setup
 

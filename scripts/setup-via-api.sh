@@ -15,10 +15,10 @@ cd "$(cd "$(dirname "$0")/.." && pwd)"
 GITHUB_API="https://api.github.com"
 RAILWAY_GRAPHQL="https://backboard.railway.app/graphql/v2"
 ORG="cochranblock"
-REPO_COCHRANBLOCK="cochranblock"
+REPO_STACK="cochranblock-stack"
 REPO_ROGUE="rogue-repo"
 
-echo "=== cochranblock monorepo setup via API ==="
+echo "=== cochranblock-stack setup via API ==="
 
 # --- GitHub ---
 if [[ -z "$GITHUB_TOKEN" ]]; then
@@ -28,17 +28,17 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
 else
   echo "Creating GitHub repos..."
 
-  # cochranblock/cochranblock (monorepo: approuter + cochranblock + oakilydokily + rogue-repo + kova)
-  echo "  Create $ORG/$REPO_COCHRANBLOCK..."
+  # cochranblock/cochranblock-stack (monorepo)
+  echo "  Create $ORG/$REPO_STACK..."
   R=$(curl -s -w "\n%{http_code}" -X POST "$GITHUB_API/orgs/$ORG/repos" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    -d '{"name":"'"$REPO_COCHRANBLOCK"'","private":false}')
+    -d '{"name":"'"$REPO_STACK"'","private":false}')
   CODE=$(echo "$R" | tail -n1)
   [[ "$CODE" == "201" ]] && echo "    Created." || echo "    (exists or error: $CODE)"
 
-  # cochranblock/rogue-repo (standalone)
+  # cochranblock/rogue-repo
   echo "  Create $ORG/$REPO_ROGUE..."
   R=$(curl -s -w "\n%{http_code}" -X POST "$GITHUB_API/orgs/$ORG/repos" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -54,7 +54,7 @@ fi
 # --- Push monorepo ---
 echo ""
 echo "Pushing monorepo..."
-git remote add origin "git@github.com:$ORG/$REPO_STACK.git" 2>/dev/null || true
+git remote set-url origin "git@github.com:$ORG/$REPO_STACK.git" 2>/dev/null || git remote add origin "git@github.com:$ORG/$REPO_STACK.git" 2>/dev/null || true
 git push -u origin main 2>/dev/null || git push -u origin master 2>/dev/null || echo "Push failed — ensure repo exists and you have push access."
 
 # --- Railway ---
@@ -73,10 +73,10 @@ else
       "query": "mutation projectCreate($input: ProjectCreateInput!) { projectCreate(input: $input) { id name } }",
       "variables": {
         "input": {
-          "name": "cochranblock",
+          "name": "cochranblock-stack",
           "isPublic": false,
           "repo": {
-            "fullRepoName": "'"$ORG/$REPO_COCHRANBLOCK"'",
+            "fullRepoName": "'"$ORG/$REPO_STACK"'",
             "branch": "main"
           }
         }

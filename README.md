@@ -1,28 +1,4 @@
-# cochranblock
-
-## Proof of Artifacts
-
-*Wire diagrams, screenshots, and demos for quick review.*
-
-```mermaid
-flowchart TB
-    subgraph Services
-        Approuter[approuter]
-        Cochranblock[cochranblock]
-        Oakilydokily[oakilydokily]
-        RogueRepo[rogue-repo]
-    end
-    Postgres[(Postgres)]
-    User[User] --> Approuter
-    Approuter --> Cochranblock
-    Approuter --> Oakilydokily
-    Approuter --> RogueRepo
-    RogueRepo --> Postgres
-```
-
-See each project README for more: [cochranblock](cochranblock/README.md), [oakilydokily](oakilydokily/README.md), [rogue-repo](rogue-repo/README.md), [kova](kova/README.md). Convention: [docs/PROOF_OF_ARTIFACTS.md](docs/PROOF_OF_ARTIFACTS.md).
-
----
+# cochranblock-stack
 
 Monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova, and related projects. Railway deployment.
 
@@ -42,4 +18,4 @@ Monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova, and related p
 
 ## GitHub
 
-Push to cochranblock/cochranblock (create repo first if needed).
+Push to cochranblock/cochranblock-stack (create repo first if needed).
