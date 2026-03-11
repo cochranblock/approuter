@@ -3,9 +3,13 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DISPLAY: ":99"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release -p approuter
+      - run: sudo apt-get update && sudo apt-get install -y xvfb chromium-browser
+      - run: Xvfb :99 -screen 0 1024x768x24 &
+      - run: sleep 2 && cargo build --release -p approuter
       - run: cargo test -p approuter 2>/dev/null || true
       - run: cargo run -p approuter --bin approuter-test --features tests 2>/dev/null || true
