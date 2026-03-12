@@ -1,5 +1,5 @@
 // Unlicense — cochranblock.org
-// Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! f90 f91 f92 f109 — cloudflared child of approuter. Config generated in data/cloudflared.yml.
 
 use crate::registry;

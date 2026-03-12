@@ -1,5 +1,5 @@
 // Unlicense — cochranblock.org
-// Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! approuter — reverse proxy + client for self-registration.
 //! Use `approuter::{f116, RegisterConfig}` when client feature is enabled.
 

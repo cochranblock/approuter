@@ -1,5 +1,5 @@
 // Unlicense — cochranblock.org
-// Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! run::start_all — Native Rust replacement for start-sites-cloudflare.sh.
 
 #![allow(non_camel_case_types, non_snake_case, dead_code)]

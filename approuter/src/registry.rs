@@ -1,5 +1,5 @@
 // Unlicense — cochranblock.org
-// Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! t31 t32 — app registry. hostname→backend_url. data/registry.json (approuter-owned).
 
 use serde::{Deserialize, Serialize};

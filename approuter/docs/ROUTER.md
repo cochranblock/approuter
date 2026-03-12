@@ -1,5 +1,5 @@
 <!-- Unlicense — cochranblock.org -->
-<!-- Contributors: GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
+<!-- Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
 # App Router
 
 Reverse proxy that routes traffic to the correct backend based on URL (Host header or path).

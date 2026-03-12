@@ -4,7 +4,8 @@ set -e
 
 HOST=gd
 REMOTE_ROOT=/home/mcochran/cochranblock
-WS_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# Script at approuter/approuter/deploy/; workspace root is 3 levels up
+WS_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 
 echo "=== Deploying to $HOST ($REMOTE_ROOT) ==="
 
@@ -25,7 +26,7 @@ ssh "$HOST" "mkdir -p $REMOTE_ROOT"
 
 # 2. Sync workspace via tar (rsync may not be on minimal Debian)
 echo "Syncing workspace..."
-SYNC_DIRS="kova-core kova-web cochranblock approuter oakilydokily kova rogue-repo vendor Cargo.toml Cargo.lock"
+SYNC_DIRS="kova-core kova-web cochranblock approuter oakilydokily kova rogue-repo railgun ironhive vendor Cargo.toml Cargo.lock"
 for d in whyyoulying wowasticker; do [ -d "$WS_ROOT/$d" ] && SYNC_DIRS="$SYNC_DIRS $d"; done
 (cd "$WS_ROOT" && tar cf - --exclude 'target' --exclude '.git' --exclude 'node_modules' $SYNC_DIRS) | ssh "$HOST" "cd $REMOTE_ROOT && tar xf -"
 
@@ -74,11 +75,11 @@ ssh "$HOST" "mkdir -p $REMOTE_ROOT/config && cp -n $REMOTE_ROOT/approuter/config
 echo "Installing systemd units..."
 ssh "$HOST" "mkdir -p ~/.config/systemd/user"
 for svc in approuter cochranblock oakilydokily rogue-repo cloudflared-cochranblock; do
-  scp "$WS_ROOT/approuter/deploy/systemd/${svc}.service" "$HOST:~/.config/systemd/user/"
+  scp "$WS_ROOT/approuter/approuter/deploy/systemd/${svc}.service" "$HOST:~/.config/systemd/user/"
 done
 
 # 7. Make cloudflared-start.sh executable
-ssh "$HOST" "chmod +x $REMOTE_ROOT/approuter/deploy/cloudflared-start.sh"
+ssh "$HOST" "chmod +x $REMOTE_ROOT/approuter/approuter/deploy/cloudflared-start.sh"
 
 # 8. Stop local Mac processes (so tunnel switches to gd)
 echo "Stopping local stack (tunnel will move to gd)..."

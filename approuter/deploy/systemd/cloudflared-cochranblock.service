@@ -8,7 +8,7 @@ Type=simple
 WorkingDirectory=/home/mcochran/cochranblock
 Environment=PATH=/home/mcochran/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=/home/mcochran/cochranblock/approuter/.env
-ExecStart=/home/mcochran/cochranblock/approuter/deploy/cloudflared-start.sh
+ExecStart=/home/mcochran/cochranblock/approuter/approuter/deploy/cloudflared-start.sh
 Restart=always
 RestartSec=5
 
