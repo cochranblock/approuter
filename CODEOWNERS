@@ -1,0 +1,47 @@
+# CODEOWNERS
+
+# Format: <path or pattern> <@user or @team>
+# - Patterns are matched top-to-bottom; first match wins
+# - Add specific paths before broad patterns
+# - @teams can be GitHub teams in the org
+
+# Default owner for all code
+* @cochranblock
+
+# Root-level config and CI
+/.github/          @cochranblock @devops-team
+/Cargo.toml        @cochranblock
+/.gitignore        @cochranblock
+
+# Core src/ — primary maintainers only
+/src/main.rs       @cochranblock
+/src/repl.rs       @cochranblock
+/src/agent_loop.rs @cochranblock
+/src/tools.rs      @cochranblock
+/src/node_cmd.rs   @cochranblock
+/src/cargo_cmd.rs  @cochranblock
+/src/serve.rs      @cochranblock
+/src/gui.rs        @cochranblock
+
+# Tests — all contributors
+/tests/            @cochranblock
+
+# Docs — shared ownership
+/docs/             @cochranblock @community
+README.md          @cochranblock
+CONTRIBUTING.md    @cochranblock
+
+# Web client
+/src/web.rs        @cochranblock
+/kova-web/         @cochranblock
+
+# Swarm / cluster
+/src/c2.rs         @cochranblock
+
+# Config & storage
+/src/config.rs     @cochranblock
+/src/storage.rs    @cochranblock
+
+# Deployment & infrastructure (if applicable)
+/.github/workflows/ @devops-team
+/approuter/        @cochranblock @devops-team

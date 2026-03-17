@@ -1,0 +1,195 @@
+# OWNERS.yaml — Structured Ownership Metadata
+# 
+# Purpose: Define who owns, maintains, and is on-call for a project.
+# Location: Place in the root of each project repository.
+# Format: YAML
+#
+# Example file (adapt for your project):
+
+# Project metadata
+project:
+  name: "approuter"
+  description: "Augment engine with agentic tool loop and swarm orchestration"
+  repo_url: "https://github.com/cochranblock/kova"
+  team_slack: "#team-kova"  # Main Slack channel
+
+# Primary maintainers (high trust, can approve PRs, deploy)
+maintainers:
+  - name: "Matt Cochran"
+    github: "cochranblock"
+    email: "matt@cochranblock.org"
+    slack: "@matt"
+    on_call: true
+    roles:
+      - "architecture"
+      - "core-api"
+      - "swarm-orchestration"
+
+  - name: "Claude (Copilot)"
+    github: "Copilot"
+    email: "copilot@github.com"
+    roles:
+      - "implementation"
+      - "code-review"
+
+# Contributors (can contribute, needs maintainer review)
+contributors:
+  - name: "Developer One"
+    github: "dev-one"
+    email: "dev1@example.com"
+    slack: "@dev1"
+    roles:
+      - "testing"
+      - "documentation"
+    expertise:
+      - "egui"
+      - "local-llm"
+
+  - name: "Developer Two"
+    github: "dev-two"
+    email: "dev2@example.com"
+    slack: "@dev2"
+    roles:
+      - "web-client"
+      - "http-api"
+    expertise:
+      - "axum"
+      - "websockets"
+
+# Team ownership for subsystems
+subsystems:
+  - name: "REPL & Chat"
+    path: "src/repl.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+    slack_channel: "#repl-chat"
+
+  - name: "Agent Loop"
+    path: "src/agent_loop.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+      - "dev-two"
+    slack_channel: "#agent-loop"
+
+  - name: "Swarm (C2)"
+    path: "src/c2.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-two"
+    slack_channel: "#swarm-cluster"
+
+  - name: "GUI"
+    path: "src/gui.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+    slack_channel: "#gui"
+
+  - name: "HTTP Server"
+    path: "src/serve.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-two"
+    slack_channel: "#http-api"
+
+  - name: "Web Client (WASM)"
+    path: "kova-web/"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-two"
+    slack_channel: "#web-client"
+
+  - name: "Local LLM Inference"
+    path: "src/inference.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+    slack_channel: "#inference"
+
+  - name: "Node Commands"
+    path: "src/node_cmd.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-two"
+    slack_channel: "#node-commands"
+
+  - name: "Cargo Commands"
+    path: "src/cargo_cmd.rs"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+    slack_channel: "#cargo-wrapper"
+
+  - name: "Documentation & Guides"
+    path: "docs/"
+    owner: "cochranblock"
+    reviewers:
+      - "dev-one"
+      - "dev-two"
+    slack_channel: "#docs"
+
+# On-call rotation (for incidents, production issues)
+on_call:
+  primary: "cochranblock"
+  secondary: "dev-two"
+  tertiary: "dev-one"
+  rotation_start_date: "2026-03-01"
+  rotation_period_days: 7
+  escalation:
+    - name: "Critical Issue"
+      timeout_minutes: 15
+      escalate_to: "cochranblock"
+    - name: "Major Issue"
+      timeout_minutes: 30
+      escalate_to: "dev-two"
+    - name: "Minor Issue"
+      timeout_minutes: 60
+      escalate_to: "dev-one"
+
+# Review & approval policies
+policies:
+  pull_requests:
+    required_approvals: 1
+    require_status_checks: true
+    require_branches_up_to_date: true
+    allow_auto_merge: true
+    dismissal_restrictions: false
+
+  commits:
+    require_signed_commits: false
+    require_linear_history: false
+    allowed_commit_authors:
+      - "cochranblock@github.com"
+      - "Copilot@github.com"
+
+  releases:
+    owner_approval_required: true
+    min_days_since_last_release: 0
+    semver_required: true
+
+# Escalation contacts (emergencies)
+escalation:
+  - name: "Emergency On-Call"
+    phone: "+1-555-0123"
+    email: "oncall@cochranblock.org"
+    slack: "@incident-commander"
+
+# Documentation links
+documentation:
+  onboarding: "docs/ONBOARDING.md"
+  architecture: "docs/ARCHITECTURE.md"
+  runbooks: "docs/RUNBOOKS.md"
+  api_reference: "docs/API_REFERENCE.md"
+  tokenization_map: "docs/compression_map.md"
+
+# Metadata
+metadata:
+  created_date: "2026-03-16"
+  last_updated: "2026-03-16"
+  updated_by: "Copilot"
+  version: "1.0"
+  review_cadence: "quarterly"
+  next_review_date: "2026-06-16"
+
