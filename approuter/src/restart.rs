@@ -1,8 +1,8 @@
-// Unlicense — cochranblock.org
-// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! Restart subcommands: pkill + cargo build + exec.
 
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
+// Unlicense — cochranblock.org
+// Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 
 use std::env;
 use std::path::PathBuf;

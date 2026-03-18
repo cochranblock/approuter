@@ -1,5 +1,6 @@
 <!-- Unlicense — cochranblock.org -->
-<!-- Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
+<!-- Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
+
 # Fixing Cloudflare Tunnel Error 1033
 
 **Error 1033** = Cloudflare cannot find a healthy `cloudflared` instance. The tunnel is down, inactive, or degraded.

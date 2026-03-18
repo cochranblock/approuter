@@ -1,4 +1,7 @@
 #!/bin/bash
+# Unlicense — cochranblock.org
+# Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+
 # cochranblock-stack is thin (approuter only). Products live in separate repos.
 # This script is for local dev when you have a full workspace elsewhere.
 # It syncs products into cochranblock-stack for deployment.

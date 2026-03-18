@@ -1,5 +1,6 @@
 <!-- Unlicense — cochranblock.org -->
-<!-- Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
+<!-- Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
+
 # Cloudflare Tunnel via systemd (hardened)
 
 Approuter and cloudflared as systemd user services. Startup order: approuter first, then cloudflared.

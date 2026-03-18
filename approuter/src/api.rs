@@ -1,6 +1,7 @@
-// Unlicense — cochranblock.org
-// Contributors: mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 //! f98 f99 f100 f101 f103 f104 f105 f106 f107 f108 — approuter API. register, list, unregister, dns_update_a, openapi, tunnel status/stop/ensure/restart/fix. t35=ApiState.
+
+// Unlicense — cochranblock.org
+// Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 
 use axum::{
     extract::{Path, Query, State},

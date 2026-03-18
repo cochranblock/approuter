@@ -1,4 +1,7 @@
 #!/bin/bash
+# Unlicense — cochranblock.org
+# Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
+
 # Run cloudflared with token from Cloudflare API. Requires CF_TOKEN, CF_ACCOUNT_ID, CF_TUNNEL_ID in env.
 set -e
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
