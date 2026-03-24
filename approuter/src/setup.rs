@@ -13,8 +13,45 @@ pub fn cb_root() -> std::path::PathBuf {
 pub fn f114(_root: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     Err("setup::f114 not implemented".into())
 }
+/// f117 = purge_cache. God mode: purge all Cloudflare zones under the account.
 pub fn f117(_root: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    Err("setup::f117 not implemented".into())
+    let token = std::env::var("CF_TOKEN").map_err(|_| "CF_TOKEN not set")?;
+    let auth = format!("Bearer {}", token);
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on(async {
+        let client = reqwest::Client::new();
+        let zones: Vec<(String, String)> = match std::env::var("CF_ACCOUNT_ID") {
+            Ok(acct) if !acct.is_empty() => {
+                let r = client.get(format!("https://api.cloudflare.com/client/v4/zones?account.id={}", acct))
+                    .header("Authorization", &auth).send().await?;
+                let j: serde_json::Value = r.json().await?;
+                j["result"].as_array()
+                    .map(|a| a.iter().filter_map(|z| {
+                        Some((z["id"].as_str()?.to_string(), z["name"].as_str()?.to_string()))
+                    }).collect())
+                    .unwrap_or_default()
+            }
+            _ => {
+                let zid = std::env::var("CF_ZONE_ID").map_err(|_| "CF_ZONE_ID or CF_ACCOUNT_ID required")?;
+                vec![(zid, "cochranblock.org".to_string())]
+            }
+        };
+        for (id, name) in &zones {
+            let r = client.post(format!("https://api.cloudflare.com/client/v4/zones/{}/purge_cache", id))
+                .header("Authorization", &auth)
+                .header("Content-Type", "application/json")
+                .body(r#"{"purge_everything":true}"#)
+                .send().await?;
+            let j: serde_json::Value = r.json().await?;
+            if j["success"].as_bool() == Some(true) {
+                println!("purged {}", name);
+            } else {
+                println!("purge failed for {}: {}", name, j);
+            }
+        }
+        Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
+    })?;
+    Ok(())
 }
 pub fn f118(_root: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     Err("setup::f118 not implemented".into())
