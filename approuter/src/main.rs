@@ -3,6 +3,7 @@
 // Unlicense — cochranblock.org
 // Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
 
+mod analytics;
 mod api;
 mod cloudflare;
 mod proxy;
@@ -212,6 +213,7 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .or_else(|| std::env::current_dir().ok())
         .unwrap_or_else(|| Path::new(".").to_path_buf());
     let registry = Arc::new(registry::t32::new(&base_dir));
+    let analytics_store = Arc::new(analytics::t42::new(&base_dir));
 
     if let Err(e) = tunnel::f91_gen(&base_dir, registry.as_ref(), p0.s16) {
         tracing::warn!("Could not generate tunnel config: {}", e);
@@ -245,10 +247,15 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .route("/approuter/tunnel/ensure", post(api::f106))
         .route("/approuter/tunnel/restart", post(api::f107))
         .route("/approuter/tunnel/fix", post(api::f108))
-        .with_state((registry.clone(), p0.s16, v0.clone(), base_dir.clone()));
+        .with_state((registry.clone(), p0.s16, v0.clone(), base_dir.clone()))
+        .route("/approuter/analytics", get(analytics_dashboard))
+        .route("/approuter/analytics/", get(analytics_dashboard))
+        .route("/approuter/analytics/data", get(analytics_data))
+        .route("/approuter/analytics/recent", get(analytics_recent))
+        .with_state(analytics_store.clone());
 
     let r0 = api_router
-        .merge(proxy::f55(v2, Some(registry.clone())))
+        .merge(proxy::f55(v2, Some(registry.clone()), Some(analytics_store.clone())))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http());
 
@@ -260,8 +267,10 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     cloudflare::f96a(registry.as_ref(), p0.s16).await;
 
     let v5 = v0.clone();
+    let analytics_shutdown = analytics_store.clone();
     let v6 = async move {
         tokio::signal::ctrl_c().await.ok();
+        analytics_shutdown.flush();
         if let Ok(mut v7) = v5.lock() {
             if let Some(mut v8) = v7.take() {
                 let _ = v8.kill();
@@ -272,3 +281,36 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     axum::serve(v4, r0).with_graceful_shutdown(v6).await?;
     Ok(())
 }
+
+async fn analytics_dashboard(
+    axum::extract::State(_store): axum::extract::State<Arc<analytics::t42>>,
+) -> impl axum::response::IntoResponse {
+    axum::response::Html(include_str!("../analytics.html"))
+}
+
+async fn analytics_data(
+    axum::extract::State(store): axum::extract::State<Arc<analytics::t42>>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let hours = params.get("hours").and_then(|h| h.parse::<u64>().ok());
+    let host = params.get("host").map(|h| h.as_str());
+    if host.is_some() {
+        let stats = store.stats(host, hours);
+        axum::Json(serde_json::json!({ host.unwrap_or("all"): stats }))
+    } else {
+        let all = store.stats_all_sites(hours);
+        axum::Json(serde_json::json!(all))
+    }
+}
+
+async fn analytics_recent(
+    axum::extract::State(store): axum::extract::State<Arc<analytics::t42>>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let limit = params.get("limit").and_then(|l| l.parse().ok()).unwrap_or(50);
+    let host = params.get("host").map(|h| h.as_str());
+    let events = store.recent(limit, host);
+    axum::Json(events)
+}
+
+use std::collections::HashMap;

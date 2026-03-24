@@ -5,7 +5,9 @@
 
 use axum::{body::Body, extract::State, http::{Request, Response, StatusCode}};
 use std::sync::Arc;
+use std::time::Instant;
 
+use crate::analytics;
 use crate::registry::t32;
 
 #[derive(Clone)]
@@ -67,22 +69,26 @@ fn f57(p0: &str, p1: &str, p2: Option<&str>) -> String {
 }
 
 /// f55 = proxy_router. Registry takes precedence over legacy t29.
-pub fn f55(p0: Arc<t29>, registry: Option<Arc<t32>>) -> axum::Router {
+pub fn f55(p0: Arc<t29>, registry: Option<Arc<t32>>, analytics: Option<Arc<analytics::t42>>) -> axum::Router {
     let v0 = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .expect("reqwest client");
-    axum::Router::new().fallback(f58).with_state((p0, registry, v0))
+    axum::Router::new().fallback(f58).with_state((p0, registry, v0, analytics))
 }
 
 async fn f58(
-    State((p0, registry, v0)): State<(Arc<t29>, Option<Arc<t32>>, reqwest::Client)>,
+    State((p0, registry, v0, analytics_store)): State<(Arc<t29>, Option<Arc<t32>>, reqwest::Client, Option<Arc<analytics::t42>>)>,
     p1: Request<Body>,
 ) -> Result<Response<Body>, StatusCode> {
+    let start = Instant::now();
+    let req_headers = p1.headers().clone();
+    let req_method = p1.method().to_string();
     let v1 = p1.headers().get("host").and_then(|v2| v2.to_str().ok());
     let v2 = p1.uri().path();
     let v3 = p1.uri().query();
+    let req_path = v2.to_string();
 
     let v5 = if let Some(ref reg) = registry {
         if let Some(base) = reg.get_backend(v1, v2) {
@@ -137,10 +143,18 @@ async fn f58(
         }
     }
     v10 = v10.body(v8);
-    let v15 = v10.send().await.map_err(|v16| {
-        tracing::warn!("proxy upstream error: {}", v16);
-        StatusCode::BAD_GATEWAY
-    })?;
+    let v15 = match v10.send().await {
+        Ok(r) => r,
+        Err(v16) => {
+            tracing::warn!("proxy upstream error: {}", v16);
+            if let Some(ref store) = analytics_store {
+                let duration_ms = start.elapsed().as_millis() as u64;
+                let event = analytics::extract_event(&req_headers, &req_method, &req_path, 502, duration_ms);
+                store.record(event);
+            }
+            return Err(StatusCode::BAD_GATEWAY);
+        }
+    };
     let v17 = v15.status().as_u16();
     let v18 = v15.headers().clone();
     let v19 = v15.bytes().await.map_err(|_| StatusCode::BAD_GATEWAY)?;
@@ -156,5 +170,12 @@ async fn f58(
             v20 = v20.header(v13, v14);
         }
     }
+    // Record analytics
+    if let Some(ref store) = analytics_store {
+        let duration_ms = start.elapsed().as_millis() as u64;
+        let event = analytics::extract_event(&req_headers, &req_method, &req_path, v17, duration_ms);
+        store.record(event);
+    }
+
     v20.body(Body::from(v19)).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }

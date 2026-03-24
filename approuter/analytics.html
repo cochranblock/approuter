@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>approuter analytics</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px}
+h1{font-size:1.4em;margin-bottom:16px;color:#fff}
+h2{font-size:1.1em;margin:16px 0 8px;color:#ccc;border-bottom:1px solid #333;padding-bottom:4px}
+.controls{margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap}
+.controls button{background:#222;border:1px solid #444;color:#ccc;padding:6px 14px;cursor:pointer;border-radius:4px;font-size:0.85em}
+.controls button.active{background:#2563eb;border-color:#3b82f6;color:#fff}
+.controls button:hover{background:#333}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#151515;border:1px solid #2a2a2a;border-radius:8px;padding:16px}
+.card h3{font-size:0.9em;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.big{font-size:2em;font-weight:700;color:#fff}
+.table{width:100%;border-collapse:collapse;font-size:0.85em}
+.table th{text-align:left;color:#888;padding:4px 8px;border-bottom:1px solid #333}
+.table td{padding:4px 8px;border-bottom:1px solid #1a1a1a}
+.table td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:12px;background:#2563eb;border-radius:2px;margin-right:8px;vertical-align:middle;min-width:2px}
+.site-tabs{display:flex;gap:0;margin-bottom:16px;overflow-x:auto}
+.site-tabs button{background:#151515;border:1px solid #333;color:#888;padding:8px 16px;cursor:pointer;font-size:0.85em;white-space:nowrap}
+.site-tabs button:first-child{border-radius:4px 0 0 4px}
+.site-tabs button:last-child{border-radius:0 4px 4px 0}
+.site-tabs button.active{background:#2563eb;border-color:#3b82f6;color:#fff}
+.live{margin-top:24px}
+.live-row{font-size:0.8em;padding:3px 0;border-bottom:1px solid #1a1a1a;display:flex;gap:8px}
+.live-row .method{color:#2563eb;width:40px}
+.live-row .status{width:30px}
+.live-row .status.ok{color:#22c55e}
+.live-row .status.err{color:#ef4444}
+.live-row .path{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ccc}
+.live-row .geo{color:#888;white-space:nowrap}
+.live-row .time{color:#666;width:50px;text-align:right}
+#loading{color:#888;padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<h1>approuter analytics</h1>
+<div class="controls">
+  <button onclick="setHours(1)" id="h1">1h</button>
+  <button onclick="setHours(6)" id="h6">6h</button>
+  <button onclick="setHours(24)" class="active" id="h24">24h</button>
+  <button onclick="setHours(168)" id="h168">7d</button>
+  <button onclick="setHours(0)" id="h0">all</button>
+</div>
+<div class="site-tabs" id="siteTabs"></div>
+<div id="loading">loading...</div>
+<div id="content" style="display:none">
+  <div class="grid" id="summary"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="tables"></div>
+  <div class="live" id="liveSection">
+    <h2>recent requests</h2>
+    <div id="liveEvents"></div>
+  </div>
+</div>
+<script>
+let hours=24,site=null,data={},allData={};
+function setHours(h){
+  hours=h;
+  document.querySelectorAll('.controls button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('h'+(h||0)).classList.add('active');
+  load();
+}
+function setSite(s){
+  site=s;
+  document.querySelectorAll('.site-tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.site-tabs button[data-site="${s||'all'}"]`).classList.add('active');
+  render();
+}
+async function load(){
+  const q=hours?`?hours=${hours}`:'';
+  const r=await fetch('/approuter/analytics/data'+q);
+  allData=await r.json();
+  const sites=Object.keys(allData).sort();
+  const tabs=document.getElementById('siteTabs');
+  tabs.innerHTML='<button data-site="all" class="'+(site===null?'active':'')+'" onclick="setSite(null)">all sites</button>';
+  sites.forEach(s=>{
+    const short=s.replace(/\.(com|org|io|pro|net)$/,'');
+    tabs.innerHTML+=`<button data-site="${s}" class="${site===s?'active':''}" onclick="setSite('${s}')">${short}</button>`;
+  });
+  render();
+  loadRecent();
+}
+function merge(stats){
+  const m={total_requests:0,total_page_views:0,unique_ips:0,bot_requests:0,human_requests:0,
+    countries:{},regions:{},cities:{},paths:{},status_codes:{},ua_families:{},requests_by_hour:{}};
+  for(const s of stats){
+    m.total_requests+=s.total_requests;m.total_page_views+=s.total_page_views;
+    m.unique_ips+=s.unique_ips;m.bot_requests+=s.bot_requests;m.human_requests+=s.human_requests;
+    for(const[k,v]of Object.entries(s.countries))m.countries[k]=(m.countries[k]||0)+v;
+    for(const[k,v]of Object.entries(s.regions))m.regions[k]=(m.regions[k]||0)+v;
+    for(const[k,v]of Object.entries(s.cities))m.cities[k]=(m.cities[k]||0)+v;
+    for(const[k,v]of Object.entries(s.paths))m.paths[k]=(m.paths[k]||0)+v;
+    for(const[k,v]of Object.entries(s.status_codes))m.status_codes[k]=(m.status_codes[k]||0)+v;
+    for(const[k,v]of Object.entries(s.ua_families))m.ua_families[k]=(m.ua_families[k]||0)+v;
+    for(const[k,v]of Object.entries(s.requests_by_hour))m.requests_by_hour[k]=(m.requests_by_hour[k]||0)+v;
+  }
+  return m;
+}
+function render(){
+  const d=site?{[site]:allData[site]}:allData;
+  const stats=site?allData[site]:merge(Object.values(allData));
+  if(!stats){document.getElementById('loading').textContent='no data yet';return;}
+  document.getElementById('loading').style.display='none';
+  document.getElementById('content').style.display='block';
+  const sum=document.getElementById('summary');
+  sum.innerHTML=`
+    <div class="card"><h3>requests</h3><div class="big">${stats.total_requests.toLocaleString()}</div></div>
+    <div class="card"><h3>page views</h3><div class="big">${stats.total_page_views.toLocaleString()}</div></div>
+    <div class="card"><h3>unique visitors</h3><div class="big">${stats.unique_ips.toLocaleString()}</div></div>
+    <div class="card"><h3>humans / bots</h3><div class="big">${stats.human_requests.toLocaleString()} / ${stats.bot_requests.toLocaleString()}</div></div>`;
+  const tables=document.getElementById('tables');
+  tables.innerHTML=makeTable('cities',stats.cities)+makeTable('regions',stats.regions)
+    +makeTable('countries',stats.countries)+makeTable('browsers',stats.ua_families)
+    +makeTable('top pages',stats.paths)+makeTable('status codes',stats.status_codes);
+}
+function makeTable(title,map){
+  const entries=Object.entries(map||{}).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if(!entries.length)return'';
+  const max=entries[0][1];
+  let rows=entries.map(([k,v])=>{
+    const pct=Math.round(v/max*100);
+    return`<tr><td><span class="bar" style="width:${pct}px"></span>${k}</td><td>${v.toLocaleString()}</td></tr>`;
+  }).join('');
+  return`<div class="card"><h3>${title}</h3><table class="table"><tbody>${rows}</tbody></table></div>`;
+}
+async function loadRecent(){
+  const q=site?`?limit=30&host=${site}`:'?limit=30';
+  const r=await fetch('/approuter/analytics/recent'+q);
+  const events=await r.json();
+  const el=document.getElementById('liveEvents');
+  el.innerHTML=events.map(e=>{
+    const geo=[e.city,e.region_code,e.country].filter(Boolean).join(', ');
+    const sc=e.status<400?'ok':'err';
+    return`<div class="live-row">
+      <span class="method">${e.method}</span>
+      <span class="status ${sc}">${e.status}</span>
+      <span class="path">${e.host}${e.path}</span>
+      <span class="geo">${geo}</span>
+      <span class="time">${e.duration_ms}ms</span>
+    </div>`;
+  }).join('');
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>
