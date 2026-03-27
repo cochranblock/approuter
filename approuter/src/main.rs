@@ -76,7 +76,7 @@ pub struct t28 {
     pub s16: u16,
     #[arg(long, env = "ROUTER_BIND", default_value = "127.0.0.1")]
     pub s17: String,
-    #[arg(long, env = "ROUTER_COCHRANBLOCK_URL", default_value = "https://127.0.0.1:443")]
+    #[arg(long, env = "ROUTER_COCHRANBLOCK_URL", default_value = "http://127.0.0.1:8081")]
     pub s35: String,
     #[arg(long, env = "ROUTER_OAKILYDOKILY_URL", default_value = "http://127.0.0.1:3000")]
     pub s36: String,

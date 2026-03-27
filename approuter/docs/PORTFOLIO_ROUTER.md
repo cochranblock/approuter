@@ -10,15 +10,15 @@ Reverse proxy that routes traffic to the correct backend based on URL (Host head
 ## Architecture
 
 ```
-Cloudflare Tunnel → router:8080 → cochranblock:443 (cochranblock.org)
-                                    └──→ oakilydokily:3000 (oakilydokily.com or /oakilydokily)
+Cloudflare Tunnel → approuter:8080 → cochranblock:8081 (cochranblock.org)
+                                       └──→ oakilydokily:3000 (oakilydokily.com or /oakilydokily)
 ```
 
 ## Env Vars
 
 | Var | Default | Description |
 |-----|---------|-------------|
-| ROUTER_COCHRANBLOCK_URL | https://127.0.0.1:443 | cochranblock backend |
+| ROUTER_COCHRANBLOCK_URL | http://127.0.0.1:8081 | cochranblock backend |
 | ROUTER_OAKILYDOKILY_URL | http://127.0.0.1:3000 | oakilydokily backend |
 | ROUTER_OAKILYDOKILY_HOST | — | Hostname for oakilydokily (Host-based routing) |
 | ROUTER_OAKILYDOKILY_PATH | — | Path prefix for oakilydokily (path-based routing) |

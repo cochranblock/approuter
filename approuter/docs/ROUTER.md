@@ -8,8 +8,10 @@ Reverse proxy that routes traffic to the correct backend based on URL (Host head
 ## Architecture
 
 ```
-Cloudflare Tunnel → router:8080 → cochranblock:443 (cochranblock.org)
-                                    └──→ oakilydokily:3000 (oakilydokily.com or /oakilydokily)
+Cloudflare Tunnel → approuter:8080 → cochranblock:8081 (cochranblock.org)
+                                       ├──→ oakilydokily:3000 (oakilydokily.com)
+                                       ├──→ rogue-repo:3001 (roguerepo.io)
+                                       └──→ ronin-sites:8000 (*.ronin-sites.pro)
 ```
 
 ## Routing Modes
@@ -28,7 +30,7 @@ Set `ROUTER_OAKILYDOKILY_PATH=/oakilydokily`. Requests to `/oakilydokily` or `/o
 |-----|---------|-------------|
 | ROUTER_PORT | 8080 | Port the router listens on |
 | ROUTER_BIND | 127.0.0.1 | Bind address |
-| ROUTER_COCHRANBLOCK_URL | https://127.0.0.1:443 | cochranblock backend |
+| ROUTER_COCHRANBLOCK_URL | http://127.0.0.1:8081 | cochranblock backend |
 | ROUTER_OAKILYDOKILY_URL | http://127.0.0.1:3000 | oakilydokily backend |
 | ROUTER_OAKILYDOKILY_HOST | — | Hostname for oakilydokily (Host-based routing) |
 | ROUTER_OAKILYDOKILY_PATH | — | Path prefix for oakilydokily (path-based routing) |
@@ -70,14 +72,20 @@ Or use `cargo run -p approuter --release -- start-all` to launch everything in o
 ## Example
 
 ```bash
-# Terminal 1: cochranblock
-PORT=443 BIND=0.0.0.0 cargo run -p cochranblock -- --go-live
+# Terminal 1: cochranblock (default port 8081)
+cargo run -p cochranblock
 
 # Terminal 2: oakilydokily
-BIND=127.0.0.1 PORT=3000 cargo run -p oakilydokily
+PORT=3000 cargo run -p oakilydokily
 
-# Terminal 3: router (Host-based)
-ROUTER_OAKILYDOKILY_HOST=oakilydokily.com cargo run -p approuter
+# Terminal 3: rogue-repo
+PORT=3001 cargo run -p rogue-repo
+
+# Terminal 4: ronin-sites
+cargo run -p ronin-sites
+
+# Terminal 5: approuter (Host-based)
+ROUTER_OAKILYDOKILY_HOST=oakilydokily.com ROUTER_ROGUEREPO_HOST=roguerepo.io cargo run -p approuter
 
 # Update tunnel (one-time)
 CF_ACCOUNT_ID=xxx CF_TOKEN=xxx cargo run -p approuter -- --update-tunnel

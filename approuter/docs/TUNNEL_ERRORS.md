@@ -34,7 +34,7 @@ Or if approuter is down: `approuter fix-tunnel` or `approuter restart` (blocking
 
 **Fix:**
 - Approuter must be listening on 8080: `curl -s http://127.0.0.1:8080/` (with `Host: cochranblock.org`)
-- Backends must be running: cochranblock (443), oakilydokily (3000), ronin-sites (8000)
+- Backends must be running: cochranblock (8081), oakilydokily (3000), rogue-repo (3001), ronin-sites (8000)
 - Run backends: `@restart_cb` `@restart_od` `@restart_rtr` `@restart_ronin` (one per terminal, blocking)
 
 ---

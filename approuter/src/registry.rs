@@ -115,6 +115,15 @@ impl t32 {
                 if h.eq_ignore_ascii_case(host) {
                     return Some(app.s48.clone());
                 }
+                // Wildcard: *.example.com matches sub.example.com
+                if let Some(suffix) = h.strip_prefix("*.") {
+                    if host.len() > suffix.len()
+                        && host.ends_with(suffix)
+                        && host.as_bytes()[host.len() - suffix.len() - 1] == b'.'
+                    {
+                        return Some(app.s48.clone());
+                    }
+                }
             }
         }
         None
@@ -174,6 +183,27 @@ mod tests {
             })
             .unwrap_err();
         assert!(err.contains("empty"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn wildcard_hostname_matching() {
+        let dir = std::env::temp_dir().join(format!("approuter_reg_wildcard_{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let reg = t32::new(&dir);
+        reg.register(t30 {
+            s46: "ronin".into(),
+            s47: vec!["ronin-sites.pro".into(), "*.ronin-sites.pro".into()],
+            s48: "http://127.0.0.1:8000".into(),
+        })
+        .unwrap();
+        // Exact match
+        assert_eq!(reg.get_backend(Some("ronin-sites.pro"), "/"), Some("http://127.0.0.1:8000".into()));
+        // Wildcard match
+        assert_eq!(reg.get_backend(Some("test.ronin-sites.pro"), "/"), Some("http://127.0.0.1:8000".into()));
+        assert_eq!(reg.get_backend(Some("deep.sub.ronin-sites.pro"), "/"), Some("http://127.0.0.1:8000".into()));
+        // Should NOT match bare suffix without subdomain
+        assert_eq!(reg.get_backend(Some("notronin-sites.pro"), "/"), None);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
