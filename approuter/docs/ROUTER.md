@@ -32,9 +32,13 @@ Set `ROUTER_OAKILYDOKILY_PATH=/oakilydokily`. Requests to `/oakilydokily` or `/o
 | ROUTER_OAKILYDOKILY_URL | http://127.0.0.1:3000 | oakilydokily backend |
 | ROUTER_OAKILYDOKILY_HOST | — | Hostname for oakilydokily (Host-based routing) |
 | ROUTER_OAKILYDOKILY_PATH | — | Path prefix for oakilydokily (path-based routing) |
+| ROUTER_ROGUEREPO_URL | http://127.0.0.1:3001 | rogue-repo backend |
+| ROUTER_ROGUEREPO_HOST | — | Hostname for rogue-repo (Host-based routing) |
 | ROUTER_RONIN_URL | http://127.0.0.1:8000 | Ronin Sites backend |
 | ROUTER_RONIN_HOST | — | Comma-separated hostnames for Ronin (exact match) |
 | ROUTER_RONIN_SUFFIX | — | Suffix match (e.g. .ronin-sites.pro) — any host ending with this routes to Ronin |
+| ROUTER_NO_TUNNEL | false | Disable tunnel spawn on startup |
+| ROUTER_CONFIG_DIR | — | Override base directory for data/ and bin/ |
 
 ## Cloudflare Tunnel Config
 
@@ -54,10 +58,14 @@ This sets ingress so cochranblock.org, www.cochranblock.org, and kaylie.cochranb
 
 ## Run Order
 
-1. **cochranblock** on 443 (or ROUTER_PORTFOLIO_URL)
-2. **oakilydokily** on 3000 (or ROUTER_KAYLIE_URL)
-3. **router** on 8080
-4. **cloudflared** tunnel pointing to http://localhost:8080 (after `--update-tunnel`)
+1. **cochranblock** on 8081 (or ROUTER_COCHRANBLOCK_URL)
+2. **oakilydokily** on 3000 (or ROUTER_OAKILYDOKILY_URL)
+3. **rogue-repo** on 3001 (or ROUTER_ROGUEREPO_URL)
+4. **ronin-sites** on 8000 (or ROUTER_RONIN_URL)
+5. **approuter** on 8080
+6. **cloudflared** tunnel pointing to http://localhost:8080
+
+Or use `cargo run -p approuter --release -- start-all` to launch everything in one command.
 
 ## Example
 

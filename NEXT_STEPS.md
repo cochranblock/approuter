@@ -1,63 +1,45 @@
 <!-- Unlicense — cochranblock.org -->
 <!-- Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3 -->
 
-# Next Steps for Deployment
+# Next Steps
 
-## Done
+## Deployment
 
-- Monorepo built at `/Users/mcochran/cochranblock-stack` with full workspace
-- Initial commit created
-- Remote set to `git@github.com:cochranblock/cochranblock-stack.git`
+Deploy approuter and backends to gd (Debian VPS). See [approuter/docs/TUNNEL_SYSTEMD.md](approuter/docs/TUNNEL_SYSTEMD.md) for systemd setup.
 
-## You Need To Do
-
-### 1. Create GitHub repos
-
-Create these on GitHub (github.com/new or org cochranblock):
-
-- **cochranblock/cochranblock-stack** (public) — monorepo: approuter, cochranblock, oakilydokily, rogue-repo, kova
-- **cochranblock/rogue-repo** (public, for standalone rogue-repo pushes)
-
-### 2. Push the monorepo
+### Quick deploy
 
 ```bash
-cd /Users/mcochran/cochranblock-stack
-git push -u origin main
+cargo run -p approuter --release -- start-all
 ```
 
-### 3. Deploy
+This spawns approuter (--no-tunnel), cochranblock, oakilydokily, rogue-repo, ronin-sites, then gets a tunnel token and spawns cloudflared.
 
-Deploy approuter and backends to gd (Debian), Docker, or your preferred host. See [approuter/docs/ROUTER.md](approuter/docs/ROUTER.md) and [approuter/docs/TUNNEL_SYSTEMD.md](approuter/docs/TUNNEL_SYSTEMD.md) for gd + Cloudflare tunnel setup.
+### Env required
 
-### 4. Rebuild monorepo after workspace changes
+Put Cloudflare credentials in `approuter/.env`:
 
-```bash
-cd /Users/mcochran
-./cochranblock-stack/scripts/build-monorepo.sh /Users/mcochran
-cd cochranblock-stack
-git add -A && git commit -m "Sync from workspace" && git push
+```
+CF_TOKEN=your_api_token
+CF_ACCOUNT_ID=your_account_id
+CF_TUNNEL_ID=your_tunnel_id
 ```
 
-## Optional: Automated setup via API
-
-No browser or `gh` CLI needed. Use token:
+### Per-service restart
 
 ```bash
-export GITHUB_TOKEN=ghp_xxx   # github.com → Settings → Developer settings → PAT (repo scope)
-./scripts/setup-via-api.sh
+cargo run -p approuter -- restart
+cargo run -p approuter -- restart-cochranblock
+cargo run -p approuter -- restart-oakilydokily
+cargo run -p approuter -- restart-ronin
+cargo run -p approuter -- restart-roguerepo
 ```
 
-This script will:
-1. Create `cochranblock/cochranblock` and `cochranblock/rogue-repo` via GitHub API
-2. Push the monorepo
-
-`jq` optional (nicer output).
-
-## Optional: GitHub CLI
-
-If you install `gh` (`brew install gh`) and run `gh auth login`, you can create repos from the CLI:
+## Verify
 
 ```bash
-gh repo create cochranblock/cochranblock-stack --public --source=/Users/mcochran/cochranblock-stack --push
-gh repo create cochranblock/rogue-repo --public
+curl http://127.0.0.1:8080/approuter/apps       # List registered apps
+curl http://127.0.0.1:8080/approuter/tunnel      # Tunnel status
+curl http://127.0.0.1:8080/approuter/tunnels     # Multi-tunnel status
+curl http://127.0.0.1:8080/approuter/analytics/data  # Analytics
 ```

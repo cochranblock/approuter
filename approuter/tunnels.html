@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tunnel Arena — approuter</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px}
+h1{font-size:1.6em;margin-bottom:4px;color:#fff}
+h2{font-size:1.1em;margin:20px 0 10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;font-weight:400}
+.subtitle{color:#666;margin-bottom:20px;font-size:.9em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#151515;border:1px solid #252525;border-radius:8px;padding:16px;position:relative}
+.card.winner{border-color:#2d6;box-shadow:0 0 12px rgba(34,221,102,.15)}
+.card h3{font-size:1em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;font-weight:600;text-transform:uppercase}
+.badge.running{background:#1a3a1a;color:#2d6}
+.badge.stopped{background:#3a1a1a;color:#d44}
+.badge.pending{background:#3a3a1a;color:#da4}
+.stat{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1a1a;font-size:.85em}
+.stat .label{color:#888}
+.stat .value{color:#fff;font-variant-numeric:tabular-nums}
+.stat .value.good{color:#2d6}
+.stat .value.warn{color:#da4}
+.stat .value.bad{color:#d44}
+.actions{margin-top:12px;display:flex;gap:8px}
+.btn{padding:6px 14px;border:1px solid #333;border-radius:4px;background:#1a1a1a;color:#ddd;cursor:pointer;font-size:.8em}
+.btn:hover{background:#252525;border-color:#555}
+.btn.start{border-color:#2a5a2a;color:#2d6}
+.btn.stop{border-color:#5a2a2a;color:#d44}
+.leaderboard{width:100%;border-collapse:collapse;margin:12px 0}
+.leaderboard th{text-align:left;padding:8px 12px;border-bottom:2px solid #333;color:#888;font-size:.8em;font-weight:500}
+.leaderboard td{padding:8px 12px;border-bottom:1px solid #1a1a1a;font-size:.85em;font-variant-numeric:tabular-nums}
+.leaderboard tr:hover{background:#151515}
+.rank{font-weight:700;font-size:1.1em}
+.rank.gold{color:#fd0}
+.rank.silver{color:#ccc}
+.rank.bronze{color:#c84}
+.bar-container{width:100%;height:6px;background:#1a1a1a;border-radius:3px;overflow:hidden;margin-top:4px}
+.bar{height:100%;border-radius:3px;transition:width .5s ease}
+.bar.latency{background:linear-gradient(90deg,#2d6,#da4,#d44)}
+.bar.uptime{background:#2d6}
+.controls{display:flex;gap:12px;margin:16px 0;align-items:center}
+.controls select,.controls button{padding:6px 12px;background:#151515;border:1px solid #333;border-radius:4px;color:#ddd;font-size:.85em;cursor:pointer}
+.controls button:hover{background:#252525}
+.probe-chart{width:100%;height:120px;background:#111;border-radius:6px;position:relative;overflow:hidden;margin:8px 0}
+.probe-dot{position:absolute;width:4px;height:4px;border-radius:50%;bottom:0}
+.probe-dot.ok{background:#2d6}
+.probe-dot.fail{background:#d44}
+#refresh-indicator{color:#555;font-size:.75em}
+</style>
+</head>
+<body>
+<h1>Tunnel Arena</h1>
+<p class="subtitle">Multi-provider tunnel metrics — compete them head-to-head</p>
+
+<div class="controls">
+  <select id="hours">
+    <option value="1">Last hour</option>
+    <option value="6">Last 6 hours</option>
+    <option value="24" selected>Last 24 hours</option>
+    <option value="168">Last 7 days</option>
+    <option value="">All time</option>
+  </select>
+  <button onclick="refresh()">Refresh</button>
+  <button onclick="healthCheck()">Run Health Check</button>
+  <span id="refresh-indicator"></span>
+</div>
+
+<h2>Provider Status</h2>
+<div id="status-grid" class="grid"></div>
+
+<h2>Leaderboard</h2>
+<table class="leaderboard" id="leaderboard">
+  <thead>
+    <tr>
+      <th>#</th><th>Provider</th><th>Avg Latency</th><th>P50</th><th>P95</th>
+      <th>Uptime %</th><th>Probes OK</th><th>Streak</th>
+    </tr>
+  </thead>
+  <tbody id="leaderboard-body"></tbody>
+</table>
+
+<h2>Probe History</h2>
+<div id="probe-charts"></div>
+
+<script>
+const API = '/approuter/tunnels';
+let autoRefresh;
+
+async function fetchJson(url) {
+  const r = await fetch(url);
+  return r.json();
+}
+
+function fmt(ms) {
+  if (ms === 0) return '—';
+  if (ms < 1000) return ms + 'ms';
+  return (ms / 1000).toFixed(1) + 's';
+}
+
+function latencyClass(ms) {
+  if (ms === 0) return '';
+  if (ms < 200) return 'good';
+  if (ms < 1000) return 'warn';
+  return 'bad';
+}
+
+function uptimeClass(pct) {
+  if (pct >= 99.5) return 'good';
+  if (pct >= 95) return 'warn';
+  return 'bad';
+}
+
+async function refresh() {
+  document.getElementById('refresh-indicator').textContent = 'refreshing...';
+  const hours = document.getElementById('hours').value;
+  const qs = hours ? `?hours=${hours}` : '';
+
+  const [status, metrics, probes] = await Promise.all([
+    fetchJson(API),
+    fetchJson(API + '/metrics' + qs),
+    fetchJson(API + '/metrics/probes'),
+  ]);
+
+  renderStatus(status.tunnels || []);
+  renderLeaderboard(metrics.comparison || []);
+  renderProbes(probes.probes || []);
+  document.getElementById('refresh-indicator').textContent = 'updated ' + new Date().toLocaleTimeString();
+}
+
+function renderStatus(tunnels) {
+  const grid = document.getElementById('status-grid');
+  grid.innerHTML = tunnels.map(t => {
+    const badge = t.running ? '<span class="badge running">running</span>'
+      : '<span class="badge stopped">stopped</span>';
+    const uptime = t.uptime_secs > 0 ? formatUptime(t.uptime_secs) : '—';
+    return `<div class="card">
+      <h3>${t.provider} ${badge}</h3>
+      <div class="stat"><span class="label">PID</span><span class="value">${t.pid || '—'}</span></div>
+      <div class="stat"><span class="label">Uptime</span><span class="value">${uptime}</span></div>
+      <div class="stat"><span class="label">Public URL</span><span class="value" style="font-size:.75em;word-break:break-all">${t.public_url || '—'}</span></div>
+      <div class="actions">
+        ${t.running
+          ? `<button class="btn stop" onclick="stopProvider('${t.provider}')">Stop</button>`
+          : `<button class="btn start" onclick="startProvider('${t.provider}')">Start</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLeaderboard(comparison) {
+  // Sort by avg latency (lower = better), exclude zero-probe entries
+  const sorted = comparison.filter(c => c.total_probes > 0)
+    .sort((a, b) => (a.avg_latency_ms || 9999) - (b.avg_latency_ms || 9999));
+
+  const ranks = ['gold', 'silver', 'bronze'];
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = sorted.map((c, i) => {
+    const rankClass = ranks[i] || '';
+    const okRate = c.total_probes > 0 ? ((c.successful_probes / c.total_probes) * 100).toFixed(1) : '—';
+    return `<tr>
+      <td><span class="rank ${rankClass}">${i + 1}</span></td>
+      <td>${c.provider}</td>
+      <td class="${latencyClass(Math.round(c.avg_latency_ms))}">${fmt(Math.round(c.avg_latency_ms))}</td>
+      <td class="${latencyClass(c.p50_latency_ms)}">${fmt(c.p50_latency_ms)}</td>
+      <td class="${latencyClass(c.p95_latency_ms)}">${fmt(c.p95_latency_ms)}</td>
+      <td class="${uptimeClass(c.uptime_pct)}">${c.uptime_pct.toFixed(2)}%</td>
+      <td>${okRate}% (${c.successful_probes}/${c.total_probes})</td>
+      <td>${c.current_streak_ok} / ${c.longest_streak_ok}</td>
+    </tr>`;
+  }).join('');
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="color:#666;text-align:center;padding:20px">No probe data yet. Start providers and run health checks.</td></tr>';
+  }
+}
+
+function renderProbes(probes) {
+  const byProvider = {};
+  probes.forEach(p => {
+    if (!byProvider[p.provider]) byProvider[p.provider] = [];
+    byProvider[p.provider].push(p);
+  });
+
+  const container = document.getElementById('probe-charts');
+  container.innerHTML = Object.entries(byProvider).map(([name, pts]) => {
+    const maxLat = Math.max(...pts.map(p => p.latency_ms), 1);
+    const dots = pts.slice(0, 100).map((p, i) => {
+      const x = (i / 100) * 100;
+      const y = (p.latency_ms / maxLat) * 100;
+      return `<div class="probe-dot ${p.ok ? 'ok' : 'fail'}" style="left:${x}%;bottom:${y}%"></div>`;
+    }).join('');
+    return `<h3 style="font-size:.85em;color:#888;margin-top:12px">${name} — last ${pts.length} probes (max ${fmt(maxLat)})</h3>
+      <div class="probe-chart">${dots}</div>`;
+  }).join('');
+}
+
+function formatUptime(secs) {
+  if (secs < 60) return secs + 's';
+  if (secs < 3600) return Math.floor(secs / 60) + 'm';
+  if (secs < 86400) return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+  return Math.floor(secs / 86400) + 'd ' + Math.floor((secs % 86400) / 3600) + 'h';
+}
+
+async function startProvider(name) {
+  await fetch(API + '/' + name + '/start', { method: 'POST' });
+  setTimeout(refresh, 1000);
+}
+
+async function stopProvider(name) {
+  await fetch(API + '/' + name + '/stop', { method: 'POST' });
+  setTimeout(refresh, 500);
+}
+
+async function healthCheck() {
+  document.getElementById('refresh-indicator').textContent = 'probing...';
+  await fetch(API + '/health');
+  setTimeout(refresh, 500);
+}
+
+// Auto-refresh every 30s
+refresh();
+autoRefresh = setInterval(refresh, 30000);
+</script>
+</body>
+</html>

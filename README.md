@@ -29,10 +29,12 @@ Index and router for cochranblock products.
 
 ```mermaid
 flowchart LR
-    User[User] --> Approuter[approuter]
-    Approuter --> Cochranblock[cochranblock]
-    Approuter --> Oakilydokily[oakilydokily]
-    Approuter --> RogueRepo[rogue-repo]
+    User[User] --> CF[Cloudflare Tunnel]
+    CF --> AR[approuter :8080]
+    AR -->|cochranblock.org| CB[cochranblock :8081]
+    AR -->|oakilydokily.com| OD[oakilydokily :3000]
+    AR -->|roguerepo.io| RR[rogue-repo :3001]
+    AR -->|*.ronin-sites.pro| RS[ronin-sites :8000]
 ```
 
 ---
@@ -54,12 +56,73 @@ flowchart LR
 
 - **approuter** — Reverse proxy + app registration for Cloudflare tunnel. Routes traffic to the products above.
 
+## Modules
+
+| Module | LOC | Purpose |
+|--------|-----|---------|
+| main.rs | 353 | CLI (clap), axum server, route wiring, analytics handlers |
+| cloudflare.rs | 978 | Full Cloudflare API: zones, CNAME, tunnel sync, ingress rules, rate limits, cache rules |
+| tunnel_provider.rs | 459 | Multi-tunnel abstraction: Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel |
+| run.rs | 406 | `start-all` command: spawns approuter + all backends + cloudflared |
+| api.rs | 338 | REST API: register, unregister, list apps, DNS update, tunnel control, dashboard |
+| analytics.rs | 292 | Server-side visitor analytics from Cloudflare geo headers (zero JS, zero cookies) |
+| restart.rs | 236 | Per-service restart subcommands (pkill + cargo build + exec) |
+| tunnel_metrics.rs | 230 | Per-provider latency, uptime, error tracking with percentile stats |
+| registry.rs | 196 | App registry: hostname → backend_url, file-persisted, thread-safe RwLock |
+| proxy.rs | 180 | Reverse proxy: host-based, path-based, suffix matching |
+| tunnel.rs | 156 | Cloudflare tunnel: config generation, cloudflared spawn, binary download + SHA256 verify |
+| tunnel_api.rs | 111 | Multi-tunnel API: status, start/stop, health, metrics, competition dashboard |
+| setup.rs | 96 | Setup subcommands: purge-cache, cache rules, rate limit, DNS, Google SA |
+| client/src/lib.rs | 75 | approuter-client crate: retry-based self-registration for backends |
+
+**4,116 lines of Rust** across 14 modules.
+
 ## Build
 
 ```bash
 cargo build -p approuter
 ```
 
+## Run
+
+```bash
+# Single command — starts approuter, all backends, and cloudflared tunnel
+cargo run -p approuter --release -- start-all
+
+# Approuter only (no backends)
+cargo run -p approuter
+
+# With multi-tunnel (Cloudflare + ngrok)
+TUNNEL_NGROK=1 NGROK_AUTHTOKEN=xxx cargo run -p approuter
+```
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /approuter/ | Dashboard HTML |
+| POST | /approuter/register | Register app (hostname → backend) |
+| GET | /approuter/apps | List registered apps |
+| DELETE | /approuter/apps/:id | Unregister app |
+| POST | /approuter/dns/update-a | Update DNS A record via CF API |
+| GET | /approuter/openapi.json | OpenAPI spec |
+| GET | /approuter/tunnel | Legacy tunnel status |
+| POST | /approuter/tunnel/stop | Stop legacy tunnel |
+| POST | /approuter/tunnel/ensure | Download cloudflared if missing |
+| POST | /approuter/tunnel/restart | Restart legacy tunnel |
+| POST | /approuter/tunnel/fix | Ensure + restart (fix 1033) |
+| GET | /approuter/tunnels | Multi-tunnel status (all providers) |
+| GET | /approuter/tunnels/health | Health check all providers |
+| GET | /approuter/tunnels/metrics | Latency/uptime comparison |
+| GET | /approuter/tunnels/metrics/probes | Raw probe data |
+| GET | /approuter/tunnels/compete | Multi-tunnel competition dashboard |
+| POST | /approuter/tunnels/:provider/start | Start a provider |
+| POST | /approuter/tunnels/:provider/stop | Stop a provider |
+| GET | /approuter/analytics | Analytics dashboard |
+| GET | /approuter/analytics/data | Aggregate analytics (per-site) |
+| GET | /approuter/analytics/recent | Recent request events |
+| GET | /approuter/google/apis | Google Discovery API proxy |
+
 ## Local development
 
-Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_COCHRANBLOCK_URL`, `ROUTER_OAKILYDOKILY_HOST`).
+Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_COCHRANBLOCK_URL`, `ROUTER_OAKILYDOKILY_HOST`). See [approuter/docs/ROUTER.md](approuter/docs/ROUTER.md) for env vars and routing modes.

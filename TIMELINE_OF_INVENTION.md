@@ -10,6 +10,18 @@
 
 ## Entries
 
+### 2026-03-27 — Server-Side Analytics
+
+**What:** Added server-side visitor analytics from Cloudflare geo headers. Zero JS, zero cookies, city-level geo for free. JSONL persistence, per-site stats, bot detection, analytics dashboard.
+**Commit:** `708477c`
+**AI Role:** AI implemented the analytics module and dashboard. Human designed the privacy model (hashed IPs, no cookies, CF headers only).
+
+### 2026-03-27 — Purge Cache (God Mode)
+
+**What:** Implemented purge-cache subcommand that purges all Cloudflare zones under the account in one shot.
+**Commit:** `b895d9e`
+**AI Role:** AI wrote the CF API integration. Human decided scope (all zones, not per-zone).
+
 ### 2026-03-22 — CODEOWNERS + Governance
 
 **What:** Added CODEOWNERS and OWNERS.yaml for repository governance.

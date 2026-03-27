@@ -11,6 +11,9 @@ mod registry;
 mod restart;
 mod run;
 mod tunnel;
+mod tunnel_api;
+mod tunnel_metrics;
+mod tunnel_provider;
 
 use approuter::setup;
 use axum::routing::{delete, get, post};
@@ -214,24 +217,49 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .unwrap_or_else(|| Path::new(".").to_path_buf());
     let registry = Arc::new(registry::t32::new(&base_dir));
     let analytics_store = Arc::new(analytics::t42::new(&base_dir));
+    let tunnel_metrics_store = Arc::new(tunnel_metrics::t50::new());
+    let tunnel_mgr = Arc::new(tunnel_provider::t47::new(p0.s16, &base_dir, tunnel_metrics_store.clone()));
 
     if let Err(e) = tunnel::f91_gen(&base_dir, registry.as_ref(), p0.s16) {
         tracing::warn!("Could not generate tunnel config: {}", e);
     }
 
     let v0: Arc<Mutex<Option<std::process::Child>>> = if !p0.s44 {
-        if let Err(e) = tunnel::f109(&base_dir).await {
-            tracing::warn!("ensure-cloudflared failed: {}. Continuing without tunnel.", e);
-            Arc::new(Mutex::new(None))
-        } else if let Ok(v1) = tunnel::f92(&base_dir, registry.as_ref(), p0.s16) {
-            Arc::new(Mutex::new(Some(v1)))
+        // Spawn all enabled tunnel providers (Cloudflare via legacy path for backward compat)
+        let results = tunnel_mgr.spawn_all(registry.as_ref());
+        let has_cf = results.iter().any(|(k, r)| *k == tunnel_provider::t44::Cloudflare && r.is_ok());
+        for (kind, result) in &results {
+            match result {
+                Ok(()) => tracing::info!("[tunnel] {} provider started", kind.name()),
+                Err(e) => tracing::warn!("[tunnel] {} provider failed: {}", kind.name(), e),
+            }
+        }
+        // Legacy cloudflare child handle — only if CF wasn't started via multi-tunnel
+        if !has_cf && !p0.s44 {
+            if let Err(e) = tunnel::f109(&base_dir).await {
+                tracing::warn!("ensure-cloudflared failed: {}. Continuing without tunnel.", e);
+                Arc::new(Mutex::new(None))
+            } else if let Ok(v1) = tunnel::f92(&base_dir, registry.as_ref(), p0.s16) {
+                Arc::new(Mutex::new(Some(v1)))
+            } else {
+                tracing::warn!("Tunnel spawn failed. Continuing without tunnel.");
+                Arc::new(Mutex::new(None))
+            }
         } else {
-            tracing::warn!("Tunnel spawn failed. Continuing without tunnel.");
             Arc::new(Mutex::new(None))
         }
     } else {
         Arc::new(Mutex::new(None))
     };
+
+    // Background health check loop for all tunnel providers
+    let hc_mgr = tunnel_mgr.clone();
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+            let _ = hc_mgr.health_check_all().await;
+        }
+    });
 
     let api_router = axum::Router::new()
         .route("/approuter", get(api::f109))
@@ -248,6 +276,14 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .route("/approuter/tunnel/restart", post(api::f107))
         .route("/approuter/tunnel/fix", post(api::f108))
         .with_state((registry.clone(), p0.s16, v0.clone(), base_dir.clone()))
+        .route("/approuter/tunnels", get(tunnel_api::tunnels_status))
+        .route("/approuter/tunnels/health", get(tunnel_api::tunnels_health))
+        .route("/approuter/tunnels/metrics", get(tunnel_api::tunnels_metrics))
+        .route("/approuter/tunnels/metrics/probes", get(tunnel_api::tunnels_probes))
+        .route("/approuter/tunnels/compete", get(tunnel_api::tunnels_dashboard))
+        .route("/approuter/tunnels/:provider/start", post(tunnel_api::tunnel_start))
+        .route("/approuter/tunnels/:provider/stop", post(tunnel_api::tunnel_stop))
+        .with_state((tunnel_mgr.clone(), tunnel_metrics_store.clone(), registry.clone()))
         .route("/approuter/analytics", get(analytics_dashboard))
         .route("/approuter/analytics/", get(analytics_dashboard))
         .route("/approuter/analytics/data", get(analytics_data))
@@ -268,9 +304,11 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
 
     let v5 = v0.clone();
     let analytics_shutdown = analytics_store.clone();
+    let tunnel_mgr_shutdown = tunnel_mgr.clone();
     let v6 = async move {
         tokio::signal::ctrl_c().await.ok();
         analytics_shutdown.flush();
+        tunnel_mgr_shutdown.stop_all();
         if let Ok(mut v7) = v5.lock() {
             if let Some(mut v8) = v7.take() {
                 let _ = v8.kill();
