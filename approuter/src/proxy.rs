@@ -73,6 +73,8 @@ pub fn f55(p0: Arc<t29>, registry: Option<Arc<t32>>, analytics: Option<Arc<analy
     let v0 = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .redirect(reqwest::redirect::Policy::none())
+        .timeout(std::time::Duration::from_secs(30))
+        .connect_timeout(std::time::Duration::from_secs(5))
         .build()
         .expect("reqwest client");
     axum::Router::new().fallback(f58).with_state((p0, registry, v0, analytics))

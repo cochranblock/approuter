@@ -2,19 +2,37 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Approuter API",
-    "description": "Universal bus for apps to register for Cloudflare tunnel domain serving. Register your app with hostnames and a backend URL; the approuter updates the tunnel ingress and DNS CNAMEs. CF_TOKEN is centralized here. Proxied apps: ronin-sites (Host *.ronin-sites.pro).",
-    "version": "0.1.0"
+    "description": "Reverse proxy + app registration + multi-tunnel management + server-side analytics. Apps register hostnames and backend URLs; approuter updates Cloudflare tunnel ingress and DNS CNAMEs. CF_TOKEN centralized here.",
+    "version": "0.2.0"
   },
   "servers": [
     {"url": "http://127.0.0.1:8080", "description": "Local (default ROUTER_PORT)"},
     {"url": "https://manager.ronin-sites.pro", "description": "Ronin Sites (proxied when Host *.ronin-sites.pro)"}
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Liveness check. Returns 200 if approuter is running.",
+        "operationId": "health",
+        "tags": ["health"],
+        "responses": {"200": {"description": "Healthy", "content": {"application/json": {"schema": {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}, "service": {"type": "string", "example": "approuter"}}}}}}}
+      }
+    },
+    "/approuter/health": {
+      "get": {
+        "summary": "Health check (prefixed)",
+        "operationId": "healthPrefixed",
+        "tags": ["health"],
+        "responses": {"200": {"description": "Healthy"}}
+      }
+    },
     "/approuter/register": {
       "post": {
         "summary": "Register an app",
         "description": "Register or update an app. Adds hostnames to the tunnel ingress, creates DNS CNAMEs for each hostname (zone must exist in Cloudflare), and persists to data/registry.json.",
         "operationId": "register",
+        "tags": ["registry"],
         "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRequest"}}}},
         "responses": {"200": {"description": "Registered", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "400": {"description": "Invalid request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
       }
@@ -24,6 +42,7 @@
         "summary": "List registered apps",
         "description": "Returns all registered apps with their hostnames and backend URLs.",
         "operationId": "listApps",
+        "tags": ["registry"],
         "responses": {"200": {"description": "List of apps", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/AppRegistration"}}}}}}
       }
     },
@@ -31,6 +50,7 @@
       "delete": {
         "summary": "Unregister an app",
         "operationId": "unregister",
+        "tags": ["registry"],
         "parameters": [{"name": "app_id", "in": "path", "required": true, "schema": {"type": "string"}}],
         "responses": {"200": {"description": "Unregistered", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "404": {"description": "App not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
       }
@@ -39,6 +59,7 @@
       "post": {
         "summary": "Update DNS A/AAAA record",
         "operationId": "dnsUpdateA",
+        "tags": ["dns"],
         "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DnsUpdateRequest"}}}},
         "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "502": {"description": "Cloudflare API error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
       }
@@ -46,49 +67,172 @@
     "/approuter/openapi.json": {
       "get": {
         "summary": "OpenAPI spec",
-        "description": "This document. Point others here for connection instructions.",
+        "description": "This document.",
         "operationId": "openapi",
+        "tags": ["meta"],
         "responses": {"200": {"description": "OpenAPI 3.0 JSON", "content": {"application/json": {"schema": {"type": "object"}}}}}
+      }
+    },
+    "/approuter/google/apis": {
+      "get": {
+        "summary": "Google Discovery API proxy",
+        "description": "Proxies Google Discovery API. ?free_only=1 filters to free-tier APIs. ?preferred=1 for preferred APIs only.",
+        "operationId": "googleApis",
+        "tags": ["google"],
+        "parameters": [
+          {"name": "free_only", "in": "query", "schema": {"type": "boolean"}},
+          {"name": "preferred", "in": "query", "schema": {"type": "boolean"}}
+        ],
+        "responses": {"200": {"description": "Google APIs list"}, "502": {"description": "Google API error"}}
       }
     },
     "/approuter/tunnel": {
       "get": {
-        "summary": "Tunnel status",
-        "description": "Returns this approuter's cloudflared instance (tunnel_id, pid, running). Use to identify which cloudflared belongs to this router.",
+        "summary": "Legacy tunnel status",
+        "description": "Returns this approuter's cloudflared child process info (tunnel_id, pid, running).",
         "operationId": "tunnelStatus",
-        "responses": {"200": {"description": "Tunnel info", "content": {"application/json": {"schema": {"type": "object", "properties": {"tunnel_id": {"type": "string"}, "pid": {"type": "integer", "nullable": true}, "running": {"type": "boolean"}}}}}}
+        "tags": ["tunnel-legacy"],
+        "responses": {"200": {"description": "Tunnel info", "content": {"application/json": {"schema": {"type": "object", "properties": {"tunnel_id": {"type": "string"}, "pid": {"type": "integer", "nullable": true}, "running": {"type": "boolean"}}}}}}}
       }
     },
     "/approuter/tunnel/stop": {
       "post": {
-        "summary": "Stop tunnel",
-        "description": "Kills only this approuter's cloudflared child. Does not affect other projects' cloudflared instances.",
+        "summary": "Stop legacy tunnel",
         "operationId": "tunnelStop",
-        "responses": {"200": {"description": "Stopped or already stopped", "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "stopped": {"type": "boolean"}}}}}}
+        "tags": ["tunnel-legacy"],
+        "responses": {"200": {"description": "Stopped or already stopped"}}
       }
     },
     "/approuter/tunnel/ensure": {
       "post": {
-        "summary": "Ensure cloudflared",
-        "description": "Downloads cloudflared to config_dir/bin/ if missing. No shell scripts needed.",
+        "summary": "Ensure cloudflared binary",
+        "description": "Downloads cloudflared to config_dir/bin/ if missing. SHA256 verified.",
         "operationId": "tunnelEnsure",
+        "tags": ["tunnel-legacy"],
         "responses": {"200": {"description": "cloudflared ready"}, "500": {"description": "Download or checksum failed"}}
       }
     },
     "/approuter/tunnel/restart": {
       "post": {
-        "summary": "Restart tunnel",
-        "description": "Stops cloudflared and spawns a fresh instance.",
+        "summary": "Restart legacy tunnel",
         "operationId": "tunnelRestart",
+        "tags": ["tunnel-legacy"],
         "responses": {"200": {"description": "Restarted"}, "500": {"description": "Spawn failed"}}
       }
     },
     "/approuter/tunnel/fix": {
       "post": {
         "summary": "Fix tunnel (1033 etc.)",
-        "description": "Ensures cloudflared binary, stops old instance, spawns fresh. One API call fixes most tunnel errors.",
+        "description": "Ensures cloudflared binary, stops old instance, spawns fresh. One call fixes most tunnel errors.",
         "operationId": "tunnelFix",
+        "tags": ["tunnel-legacy"],
         "responses": {"200": {"description": "Fixed"}, "500": {"description": "Ensure or spawn failed"}}
+      }
+    },
+    "/approuter/tunnels": {
+      "get": {
+        "summary": "All tunnel providers status",
+        "description": "Returns status of all configured tunnel providers (Cloudflare, ngrok, Tailscale, Bore, localtunnel).",
+        "operationId": "tunnelsStatus",
+        "tags": ["tunnels"],
+        "responses": {"200": {"description": "Provider statuses", "content": {"application/json": {"schema": {"type": "object", "properties": {"tunnels": {"type": "array", "items": {"$ref": "#/components/schemas/TunnelStatus"}}}}}}}}
+      }
+    },
+    "/approuter/tunnels/health": {
+      "get": {
+        "summary": "Health check all tunnel providers",
+        "description": "Probes each running provider's public URL. Records latency metrics.",
+        "operationId": "tunnelsHealth",
+        "tags": ["tunnels"],
+        "responses": {"200": {"description": "Health results per provider", "content": {"application/json": {"schema": {"type": "object", "properties": {"health": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "boolean"}}}}}}}}}
+      }
+    },
+    "/approuter/tunnels/metrics": {
+      "get": {
+        "summary": "Tunnel metrics comparison",
+        "description": "Aggregate latency/uptime metrics across all providers. ?hours=24 for time window. ?provider=cloudflare for single provider.",
+        "operationId": "tunnelsMetrics",
+        "tags": ["tunnels"],
+        "parameters": [
+          {"name": "hours", "in": "query", "schema": {"type": "integer"}},
+          {"name": "provider", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {"200": {"description": "Metrics comparison", "content": {"application/json": {"schema": {"type": "object", "properties": {"comparison": {"type": "array", "items": {"$ref": "#/components/schemas/ProviderMetrics"}}}}}}}}
+      }
+    },
+    "/approuter/tunnels/metrics/probes": {
+      "get": {
+        "summary": "Raw probe data",
+        "description": "Recent health probe results. ?provider=cloudflare to filter.",
+        "operationId": "tunnelsProbes",
+        "tags": ["tunnels"],
+        "parameters": [
+          {"name": "provider", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {"200": {"description": "Probe history"}}
+      }
+    },
+    "/approuter/tunnels/compete": {
+      "get": {
+        "summary": "Tunnel competition dashboard",
+        "description": "HTML dashboard comparing tunnel providers head-to-head.",
+        "operationId": "tunnelsCompete",
+        "tags": ["tunnels"],
+        "responses": {"200": {"description": "HTML dashboard", "content": {"text/html": {}}}}
+      }
+    },
+    "/approuter/tunnels/{provider}/start": {
+      "post": {
+        "summary": "Start a tunnel provider",
+        "description": "Start a specific provider. Valid: cloudflare, ngrok, tailscale, bore, localtunnel.",
+        "operationId": "tunnelStart",
+        "tags": ["tunnels"],
+        "parameters": [{"name": "provider", "in": "path", "required": true, "schema": {"type": "string", "enum": ["cloudflare", "ngrok", "tailscale", "bore", "localtunnel"]}}],
+        "responses": {"200": {"description": "Started"}, "400": {"description": "Unknown provider"}, "404": {"description": "Provider not configured"}}
+      }
+    },
+    "/approuter/tunnels/{provider}/stop": {
+      "post": {
+        "summary": "Stop a tunnel provider",
+        "operationId": "tunnelProviderStop",
+        "tags": ["tunnels"],
+        "parameters": [{"name": "provider", "in": "path", "required": true, "schema": {"type": "string", "enum": ["cloudflare", "ngrok", "tailscale", "bore", "localtunnel"]}}],
+        "responses": {"200": {"description": "Stopped"}, "400": {"description": "Unknown provider"}}
+      }
+    },
+    "/approuter/analytics": {
+      "get": {
+        "summary": "Analytics dashboard",
+        "description": "HTML dashboard with per-site visitor analytics. Server-side from Cloudflare geo headers — zero JS tracking, zero cookies.",
+        "operationId": "analyticsDashboard",
+        "tags": ["analytics"],
+        "responses": {"200": {"description": "HTML dashboard", "content": {"text/html": {}}}}
+      }
+    },
+    "/approuter/analytics/data": {
+      "get": {
+        "summary": "Analytics data",
+        "description": "Aggregate stats per site. ?host=cochranblock.org for single site. ?hours=24 for time window.",
+        "operationId": "analyticsData",
+        "tags": ["analytics"],
+        "parameters": [
+          {"name": "host", "in": "query", "schema": {"type": "string"}},
+          {"name": "hours", "in": "query", "schema": {"type": "integer"}}
+        ],
+        "responses": {"200": {"description": "Per-site aggregate stats", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/SiteStats"}}}}}}
+      }
+    },
+    "/approuter/analytics/recent": {
+      "get": {
+        "summary": "Recent request events",
+        "description": "Raw recent events for live view. ?limit=50 (default). ?host=cochranblock.org to filter.",
+        "operationId": "analyticsRecent",
+        "tags": ["analytics"],
+        "parameters": [
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 50}},
+          {"name": "host", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {"200": {"description": "Recent events", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/AnalyticsEvent"}}}}}}
       }
     },
     "/api/v1/auth/token": {
@@ -180,6 +324,10 @@
       "DnsUpdateRequest": {"type": "object", "required": ["zone_id", "record_id", "content"], "properties": {"zone_id": {"type": "string"}, "record_id": {"type": "string"}, "content": {"type": "string"}}},
       "OkResponse": {"type": "object", "properties": {"ok": {"type": "boolean", "example": true}}},
       "ErrorResponse": {"type": "object", "properties": {"error": {"type": "string"}}},
+      "TunnelStatus": {"type": "object", "properties": {"provider": {"type": "string"}, "pid": {"type": "integer", "nullable": true}, "running": {"type": "boolean"}, "uptime_secs": {"type": "integer"}, "public_url": {"type": "string", "nullable": true}}},
+      "ProviderMetrics": {"type": "object", "properties": {"provider": {"type": "string"}, "total_probes": {"type": "integer"}, "successful_probes": {"type": "integer"}, "failed_probes": {"type": "integer"}, "avg_latency_ms": {"type": "number"}, "p50_latency_ms": {"type": "integer"}, "p95_latency_ms": {"type": "integer"}, "p99_latency_ms": {"type": "integer"}, "uptime_pct": {"type": "number"}, "start_count": {"type": "integer"}}},
+      "AnalyticsEvent": {"type": "object", "properties": {"ts": {"type": "integer"}, "host": {"type": "string"}, "path": {"type": "string"}, "method": {"type": "string"}, "status": {"type": "integer"}, "duration_ms": {"type": "integer"}, "country": {"type": "string"}, "city": {"type": "string"}, "region": {"type": "string"}, "ua_family": {"type": "string"}, "is_bot": {"type": "boolean"}}},
+      "SiteStats": {"type": "object", "properties": {"total_requests": {"type": "integer"}, "total_page_views": {"type": "integer"}, "unique_ips": {"type": "integer"}, "countries": {"type": "object"}, "cities": {"type": "object"}, "paths": {"type": "object"}, "status_codes": {"type": "object"}, "bot_requests": {"type": "integer"}, "human_requests": {"type": "integer"}}},
       "RoninRegisterRequest": {"type": "object", "required": ["email", "password", "full_name", "shop_name", "subdomain", "plan_tier"], "properties": {"email": {"type": "string"}, "password": {"type": "string"}, "full_name": {"type": "string"}, "shop_name": {"type": "string"}, "subdomain": {"type": "string"}, "plan_tier": {"type": "string", "enum": ["artist", "manager"]}, "profile_image_url": {"type": "string"}}}
     },
     "securitySchemes": {

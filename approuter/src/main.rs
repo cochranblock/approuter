@@ -262,6 +262,8 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     });
 
     let api_router = axum::Router::new()
+        .route("/health", get(health))
+        .route("/approuter/health", get(health))
         .route("/approuter", get(api::f109))
         .route("/approuter/", get(api::f109))
         .route("/approuter/register", post(api::f98))
@@ -349,6 +351,10 @@ async fn analytics_recent(
     let host = params.get("host").map(|h| h.as_str());
     let events = store.recent(limit, host);
     axum::Json(events)
+}
+
+async fn health() -> impl axum::response::IntoResponse {
+    axum::Json(serde_json::json!({"status": "ok", "service": "approuter"}))
 }
 
 use std::collections::HashMap;
