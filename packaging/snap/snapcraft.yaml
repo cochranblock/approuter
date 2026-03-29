@@ -1,0 +1,70 @@
+name: cochranblock-stack
+base: core22
+version: '0.2.0'
+summary: CochranBlock zero-cloud stack — reverse proxy, website, tunnel
+description: |
+  The full CochranBlock production stack in a single snap:
+  - approuter: Rust reverse proxy (port 8080) routing to backend services
+  - cochranblock: Company website (port 8081) — Rust/axum, no JavaScript
+  - cloudflared: Cloudflare tunnel for internet exposure (optional)
+
+  Replaces nginx + Node.js + Docker with two Rust binaries and a tunnel.
+  Runs an entire company on a $10/month Cloudflare tunnel.
+
+  Part of the CochranBlock zero-cloud architecture. Unlicense (public domain).
+
+grade: stable
+confinement: classic
+
+architectures:
+  - build-on: [amd64, arm64]
+
+apps:
+  approuter:
+    command: bin/approuter
+    daemon: simple
+    restart-condition: always
+  cochranblock:
+    command: bin/cochranblock
+    daemon: simple
+    restart-condition: always
+  cloudflared:
+    command: bin/cloudflared
+    daemon: simple
+    restart-condition: on-failure
+
+parts:
+  approuter:
+    plugin: rust
+    source: https://github.com/cochranblock/approuter.git
+    source-branch: main
+    rust-channel: stable
+    build-packages:
+      - pkg-config
+      - libssl-dev
+    override-build: |
+      cargo build --release -p approuter
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp target/release/approuter $SNAPCRAFT_PART_INSTALL/bin/
+
+  cochranblock:
+    plugin: rust
+    source: https://github.com/cochranblock/cochranblock.git
+    source-branch: main
+    rust-channel: stable
+    build-packages:
+      - pkg-config
+      - libssl-dev
+    override-build: |
+      cargo build --release -p cochranblock
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp target/release/cochranblock $SNAPCRAFT_PART_INSTALL/bin/
+
+  cloudflared:
+    plugin: nil
+    override-build: |
+      ARCH=$(dpkg --print-architecture)
+      curl -Lo cloudflared "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${ARCH}"
+      chmod +x cloudflared
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      mv cloudflared $SNAPCRAFT_PART_INSTALL/bin/
