@@ -352,9 +352,21 @@ pub fn start_all(open_browser_flag: bool) -> Result<(), Box<dyn std::error::Erro
             load_cf_env_from(&p);
         }
     }
-    // Prefer API (CF_TOKEN + CF_ACCOUNT_ID) when configured; fallback to TUNNEL_TOKEN
+    // Sync tunnel ingress to correct port BEFORE spawning cloudflared.
+    // This ensures the Cloudflare dashboard has port 8080 (or ROUTER_PORT), not a stale value.
     let api_ready = env_opt("CF_TOKEN").or_else(|| env_opt("CLOUDFLARE_API_TOKEN")).is_some()
         && env_opt("CF_ACCOUNT_ID").or_else(|| env_opt("CLOUDFLARE_ACCOUNT_ID")).is_some();
+    let listen_port: u16 = port.parse().unwrap_or(8080);
+    if api_ready {
+        let base = root.clone();
+        if let Ok(rt) = tokio::runtime::Builder::new_current_thread().enable_all().build() {
+            let reg = crate::registry::t32::new(&base);
+            rt.block_on(crate::cloudflare::f96a(&reg, listen_port));
+            println!("Tunnel ingress synced to port {}", listen_port);
+        }
+    }
+
+    // Prefer API (CF_TOKEN + CF_ACCOUNT_ID) when configured; fallback to TUNNEL_TOKEN
     let token = api_ready
         .then(|| {
             let rt = tokio::runtime::Builder::new_current_thread()

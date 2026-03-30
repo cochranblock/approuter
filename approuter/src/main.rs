@@ -302,7 +302,10 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     tracing::info!("approuter listening on http://{}", v3);
 
     // Sync tunnel ingress to correct port on startup (prevents stale 55842 etc.)
-    cloudflare::f96a(registry.as_ref(), p0.s16).await;
+    // Only sync when tunnel is enabled — otherwise we'd push a dev/test port to the dashboard.
+    if !p0.s44 {
+        cloudflare::f96a(registry.as_ref(), p0.s16).await;
+    }
 
     let v5 = v0.clone();
     let analytics_shutdown = analytics_store.clone();
