@@ -27,7 +27,7 @@ flowchart LR
 
 | Metric | Value |
 |--------|-------|
-| Lines of Rust | 4,116 across 14 modules |
+| Lines of Rust | 4,146 across 14 modules |
 | Largest module | cloudflare.rs (978 LOC) — full CF API integration |
 | Routing modes | Host-based, path-based, suffix matching |
 | API endpoints | 22 routes — register, apps, DNS, tunnel control, multi-tunnel, analytics, dashboard |

@@ -77,7 +77,7 @@ impl t42 {
         events.push(event);
 
         // Flush to disk every 100 events
-        if events.len() % 100 == 0 {
+        if events.len().is_multiple_of(100) {
             let _ = Self::save_events(&self.data_dir, &events);
         }
 
@@ -181,7 +181,7 @@ impl t42 {
         let events = self.events.lock().unwrap();
         events.iter()
             .rev()
-            .filter(|e| host_filter.map_or(true, |h| e.host.contains(h)))
+            .filter(|e| host_filter.is_none_or(|h| e.host.contains(h)))
             .take(limit)
             .cloned()
             .collect()

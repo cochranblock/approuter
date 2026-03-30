@@ -80,8 +80,10 @@ pub fn f55(p0: Arc<t29>, registry: Option<Arc<t32>>, analytics: Option<Arc<analy
     axum::Router::new().fallback(f58).with_state((p0, registry, v0, analytics))
 }
 
+type ProxyState = (Arc<t29>, Option<Arc<t32>>, reqwest::Client, Option<Arc<analytics::t42>>);
+
 async fn f58(
-    State((p0, registry, v0, analytics_store)): State<(Arc<t29>, Option<Arc<t32>>, reqwest::Client, Option<Arc<analytics::t42>>)>,
+    State((p0, registry, v0, analytics_store)): State<ProxyState>,
     p1: Request<Body>,
 ) -> Result<Response<Body>, StatusCode> {
     let start = Instant::now();

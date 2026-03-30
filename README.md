@@ -60,7 +60,7 @@ flowchart LR
 
 | Module | LOC | Purpose |
 |--------|-----|---------|
-| main.rs | 353 | CLI (clap), axum server, route wiring, analytics handlers |
+| main.rs | 359 | CLI (clap), axum server, route wiring, health + analytics handlers |
 | cloudflare.rs | 978 | Full Cloudflare API: zones, CNAME, tunnel sync, ingress rules, rate limits, cache rules |
 | tunnel_provider.rs | 459 | Multi-tunnel abstraction: Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel |
 | run.rs | 406 | `start-all` command: spawns approuter + all backends + cloudflared |
@@ -68,14 +68,14 @@ flowchart LR
 | analytics.rs | 292 | Server-side visitor analytics from Cloudflare geo headers (zero JS, zero cookies) |
 | restart.rs | 236 | Per-service restart subcommands (pkill + cargo build + exec) |
 | tunnel_metrics.rs | 230 | Per-provider latency, uptime, error tracking with percentile stats |
-| registry.rs | 196 | App registry: hostname → backend_url, file-persisted, thread-safe RwLock |
-| proxy.rs | 180 | Reverse proxy: host-based, path-based, suffix matching |
+| registry.rs | 226 | App registry: hostname → backend_url, file-persisted, thread-safe RwLock, wildcard matching |
+| proxy.rs | 184 | Reverse proxy: host-based, path-based, suffix matching, 30s timeout |
 | tunnel.rs | 156 | Cloudflare tunnel: config generation, cloudflared spawn, binary download + SHA256 verify |
 | tunnel_api.rs | 111 | Multi-tunnel API: status, start/stop, health, metrics, competition dashboard |
 | setup.rs | 96 | Setup subcommands: purge-cache, cache rules, rate limit, DNS, Google SA |
 | client/src/lib.rs | 75 | approuter-client crate: retry-based self-registration for backends |
 
-**4,116 lines of Rust** across 14 modules.
+**4,146 lines of Rust** across 14 modules.
 
 ## Build
 
@@ -100,6 +100,8 @@ TUNNEL_NGROK=1 NGROK_AUTHTOKEN=xxx cargo run -p approuter
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | /health | Liveness check |
+| GET | /approuter/health | Liveness check (prefixed) |
 | GET | /approuter/ | Dashboard HTML |
 | POST | /approuter/register | Register app (hostname → backend) |
 | GET | /approuter/apps | List registered apps |

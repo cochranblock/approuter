@@ -48,6 +48,7 @@ pub struct t50 {
     max_probes: usize,
 }
 
+#[derive(Default)]
 struct ProviderLifecycle {
     start_count: u64,
     last_start: Option<u64>,
@@ -57,18 +58,7 @@ struct ProviderLifecycle {
     running: bool,
 }
 
-impl Default for ProviderLifecycle {
-    fn default() -> Self {
-        Self {
-            start_count: 0,
-            last_start: None,
-            total_uptime_secs: 0,
-            total_downtime_secs: 0,
-            last_stop: None,
-            running: false,
-        }
-    }
-}
+// Default derived — all fields are 0/None/false.
 
 impl t50 {
     pub fn new() -> Self {
