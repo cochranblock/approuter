@@ -422,7 +422,43 @@ pub fn start_all(open_browser_flag: bool) -> Result<(), Box<dyn std::error::Erro
     }
     }
 
-    // 8. Optionally open browser to sites
+    // 8. Post-spawn health check — poll /health on each backend before declaring ready
+    {
+        struct Backend { name: &'static str, url: String }
+        let backends = vec![
+            Backend { name: "approuter", url: format!("http://127.0.0.1:{}/health", port) },
+            Backend { name: "cochranblock", url: env_or("ROUTER_COCHRANBLOCK_URL", "http://127.0.0.1:8081") + "/health" },
+            Backend { name: "oakilydokily", url: env_or("ROUTER_OAKILYDOKILY_URL", "http://127.0.0.1:3000") + "/health" },
+        ];
+        let client = reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(2))
+            .build()
+            .unwrap_or_default();
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        let mut ready: std::collections::HashMap<&str, bool> = backends.iter().map(|b| (b.name, false)).collect();
+        println!("Polling backends for readiness (30s timeout)...");
+        while std::time::Instant::now() < deadline {
+            let all_ready = ready.values().all(|v| *v);
+            if all_ready { break; }
+            for b in &backends {
+                if *ready.get(b.name).unwrap_or(&false) { continue; }
+                if client.get(&b.url).send().map(|r| r.status().is_success()).unwrap_or(false) {
+                    ready.insert(b.name, true);
+                    println!("  [ready] {}", b.name);
+                }
+            }
+            if !ready.values().all(|v| *v) {
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+        for b in &backends {
+            if !ready.get(b.name).unwrap_or(&false) {
+                eprintln!("  [timeout] {} did not become healthy within 30s", b.name);
+            }
+        }
+    }
+
+    // 9. Optionally open browser to sites
     if open_browser_flag {
         thread::sleep(Duration::from_secs(1));
         for url in [
