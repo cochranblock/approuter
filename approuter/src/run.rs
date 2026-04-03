@@ -210,6 +210,28 @@ pub fn start_all(open_browser_flag: bool) -> Result<(), Box<dyn std::error::Erro
     let port = env_or("ROUTER_PORT", "8080");
     let approuter_url = env_or("APPROUTER_URL", &format!("http://127.0.0.1:{}", port));
 
+    // 0. Validate env — warn on missing vars that will cause silent skips
+    let mut warnings = Vec::new();
+    if env_opt("CF_TOKEN").is_none() && env_opt("CLOUDFLARE_API_TOKEN").is_none() {
+        warnings.push("CF_TOKEN not set — tunnel will not start");
+    }
+    if env_opt("CF_ACCOUNT_ID").is_none() && env_opt("CLOUDFLARE_ACCOUNT_ID").is_none() {
+        warnings.push("CF_ACCOUNT_ID not set — tunnel ingress sync disabled");
+    }
+    if rogue_repo_root().is_none() {
+        warnings.push("ROGUE_REPO_ROOT not set and rogue-repo not found — will be skipped");
+    }
+    if ronin_root().is_none() {
+        warnings.push("RONIN_ROOT not set and ronin-sites not found — will be skipped");
+    }
+    if !warnings.is_empty() {
+        eprintln!("=== start-all env warnings ===");
+        for w in &warnings {
+            eprintln!("  ! {}", w);
+        }
+        eprintln!("==============================");
+    }
+
     // 1. pkill existing processes
     pkill("cloudflared");
     pkill("approuter");
