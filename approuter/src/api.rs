@@ -1,4 +1,4 @@
-//! f98 f99 f100 f101 f103 f104 f105 f106 f107 f108 — approuter API. register, list, unregister, dns_update_a, openapi, tunnel status/stop/ensure/restart/fix. t35=ApiState.
+//! f98 f99 f100 f101 f103 f104 f105 f106 f107 f108 f140 — approuter API. register, list, unregister, dns_update_a, openapi, tunnel status/stop/ensure/restart/fix, status. t35=ApiState, t37=StatusState.
 
 // Unlicense — cochranblock.org
 // Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
@@ -362,4 +362,91 @@ pub async fn f108(State((p0, p1, p2, p3)): State<ApiState>, headers: HeaderMap) 
             )
         }
     }
+}
+
+/// t37 = StatusState. (registry, legacy_config).
+pub type StatusState = (Arc<t32>, Arc<crate::proxy::t29>);
+
+/// f140 = status_handler. GET /approuter/status. Live health check of all products.
+pub async fn f140(State((registry, legacy)): State<StatusState>) -> impl IntoResponse {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .connect_timeout(std::time::Duration::from_secs(2))
+        .build()
+        .unwrap_or_default();
+
+    // Collect all products: legacy routes + dynamic registry
+    let mut products: Vec<(String, String, Vec<String>)> = Vec::new();
+
+    // Legacy products (always present even if no hostnames configured)
+    products.push(("cochranblock".into(), legacy.s35.clone(), vec!["cochranblock.org".into(), "www.cochranblock.org".into()]));
+    products.push(("oakilydokily".into(), legacy.s36.clone(), {
+        let mut h = legacy.s37.clone();
+        if h.is_empty() { h.push("oakilydokily.com".into()); }
+        h
+    }));
+    products.push(("rogue-repo".into(), legacy.s42.clone(), {
+        let mut h = legacy.s43.clone();
+        if h.is_empty() { h.push("roguerepo.io".into()); }
+        h
+    }));
+    products.push(("ronin-sites".into(), legacy.s49.clone(), {
+        let mut h = legacy.s50.clone();
+        if h.is_empty() { h.push("ronin-sites.pro".into()); }
+        h
+    }));
+
+    // Dynamic registry apps (skip duplicates already in legacy)
+    let legacy_ids: std::collections::HashSet<&str> = ["cochranblock", "oakilydokily", "rogue-repo", "ronin-sites"].into();
+    for app in registry.list_apps() {
+        if !legacy_ids.contains(app.s46.as_str()) {
+            products.push((app.s46, app.s48, app.s47));
+        }
+    }
+
+    // Health check all backends in parallel
+    let checks: Vec<_> = products
+        .into_iter()
+        .map(|(name, backend_url, hostnames)| {
+            let c = client.clone();
+            let health_url = format!("{}/health", backend_url);
+            tokio::spawn(async move {
+                let start = std::time::Instant::now();
+                let result = c.get(&health_url).send().await;
+                let latency_ms = start.elapsed().as_millis() as u64;
+                let (healthy, status_code) = match result {
+                    Ok(res) => (res.status().is_success(), res.status().as_u16()),
+                    Err(_) => (false, 0),
+                };
+                serde_json::json!({
+                    "product": name,
+                    "backend": backend_url,
+                    "hostnames": hostnames,
+                    "healthy": healthy,
+                    "status_code": status_code,
+                    "latency_ms": latency_ms,
+                })
+            })
+        })
+        .collect();
+
+    let mut results = Vec::new();
+    for handle in checks {
+        if let Ok(val) = handle.await {
+            results.push(val);
+        }
+    }
+
+    let healthy_count = results.iter().filter(|r| r["healthy"].as_bool().unwrap_or(false)).count();
+    let total = results.len();
+
+    (StatusCode::OK, Json(serde_json::json!({
+        "approuter": "ok",
+        "products": results,
+        "summary": {
+            "total": total,
+            "healthy": healthy_count,
+            "unhealthy": total - healthy_count,
+        }
+    })))
 }

@@ -64,7 +64,7 @@ flowchart LR
 | tunnel_provider.rs | 459 | Multi-tunnel abstraction: Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel |
 | run.rs | 418 | `start-all` command: spawns approuter + all backends + cloudflared |
 | cloudflare/dns.rs | 369 | DNS CNAME management (f95/f97), per-zone setup (f93/f94_ronin) |
-| api.rs | 364 | REST API: register, unregister, list apps, DNS update, tunnel control, API key auth |
+| api.rs | 451 | REST API: register, unregister, list apps, DNS update, tunnel control, API key auth, live status |
 | main.rs | 362 | CLI (clap), axum server, route wiring, health + analytics handlers |
 | analytics.rs | 292 | Server-side visitor analytics from Cloudflare geo headers (zero JS, zero cookies) |
 | registry.rs | 275 | App registry: hostname -> backend_url, file-persisted, collision detection, wildcard matching |
@@ -77,7 +77,7 @@ flowchart LR
 | setup.rs | 96 | Setup subcommands: purge-cache, cache rules, rate limit, DNS, Google SA |
 | client/src/lib.rs | 75 | approuter-client crate: retry-based self-registration for backends |
 
-**4,253 lines of Rust** across 16 modules.
+**4,342 lines of Rust** across 16 modules.
 
 ## Build
 
@@ -106,6 +106,7 @@ Mutating endpoints require `Authorization: Bearer <key>` when `ROUTER_API_KEY` i
 |--------|------|------|-------------|
 | GET | /health | - | Liveness check |
 | GET | /approuter/ | - | Dashboard HTML |
+| GET | /approuter/status | - | Live health check of all products (backends, hostnames, latency) |
 | POST | /approuter/register | key | Register app (hostname -> backend). Returns 409 on hostname collision |
 | GET | /approuter/apps | - | List registered apps |
 | DELETE | /approuter/apps/:id | key | Unregister app |

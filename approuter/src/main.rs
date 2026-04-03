@@ -290,7 +290,9 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .route("/approuter/analytics/", get(analytics_dashboard))
         .route("/approuter/analytics/data", get(analytics_data))
         .route("/approuter/analytics/recent", get(analytics_recent))
-        .with_state(analytics_store.clone());
+        .with_state(analytics_store.clone())
+        .route("/approuter/status", get(api::f140))
+        .with_state((registry.clone(), v2.clone()));
 
     let r0 = api_router
         .merge(proxy::f55(v2, Some(registry.clone()), Some(analytics_store.clone())))
