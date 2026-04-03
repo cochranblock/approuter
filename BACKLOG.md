@@ -7,9 +7,9 @@ Tags: `[build]` `[test]` `[docs]` `[feature]` `[fix]` `[research]`
 
 ---
 
-1. ~~`[test]` Add integration test for API key auth~~ DONE (api_hardening.rs)
-2. ~~`[test]` Add integration test for hostname collision~~ DONE (api_hardening.rs)
-3. ~~`[test]` Add integration test for /approuter/status~~ DONE (api_hardening.rs)
+1. `[fix]` Auth-gate tunnel start/stop/ensure — `POST /approuter/tunnels/:provider/start|stop` and `POST /approuter/tunnel/ensure` (f106) have zero auth. Any HTTP client can kill tunnels or trigger binary downloads. Add f139 check to tunnel_start, tunnel_stop (tunnel_api.rs) and f106 (api.rs). ~15 LOC. Immediate security fix on an internet-exposed service. (P23 triple-lens 2026-04-03)
+2. `[test]` Analytics storage tests — JSONL persistence, stats_all_sites aggregation, retention prune, bot detection accuracy all untested. Most complex stateful module with zero coverage; a bug silently drops visitor data. (P23 triple-lens 2026-04-03)
+3. `[feature]` Circuit breaker per backend — no per-backend failure counting in proxy.rs. Dead backend blocks requests for 30s (connect timeout) per request; cascades under load. Track N consecutive failures → skip proxy, return 503, retry after backoff. (P23 triple-lens 2026-04-03)
 4. ~~`[feature]` Post-spawn health check loop in start-all — poll /health on each backend before declaring ready~~ DONE (run.rs: 30s polling loop, prints [ready]/[timeout] per backend)
 5. ~~`[fix]` Replace reqwest::Client::new() in api.rs f110 with shared lazy client~~ DONE
 6. ~~`[test]` Add proxy error tests — unreachable backend returns 502, analytics recorded~~ DONE
