@@ -1,4 +1,4 @@
-//! Mock Cloudflare API with wiremock. Test registration flow when CF returns success.
+//! Mock Cloudflare API with wiremock. Test registration flow, DNS CNAME, DNS A/AAAA updates.
 
 // Unlicense — cochranblock.org
 // Contributors: Mattbusel (XFactor), GotEmCoach, KOVA, Claude Opus 4.6, SuperNinja, Composer 1.5, Google Gemini Pro 3
@@ -179,4 +179,147 @@ async fn registration_flow_with_mocked_cloudflare() {
         "test-website not found in apps: {:?}",
         apps
     );
+}
+
+/// Backlog #8: Test DNS A/AAAA record update (f97) via /approuter/dns/update-a.
+#[tokio::test]
+async fn dns_update_a_record_via_mock() {
+    let mock_server = MockServer::start().await;
+    let mock_uri = mock_server.uri();
+
+    // Mock PATCH /client/v4/zones/{zone_id}/dns_records/{record_id}
+    Mock::given(method("PATCH"))
+        .and(path_regex(r"^/client/v4/zones/z1/dns_records/r1$"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "success": true,
+            "result": { "id": "r1", "type": "A", "content": "1.2.3.4" }
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let port = free_port();
+    let bin = std::env::current_exe().unwrap().parent().unwrap().parent().unwrap().join("approuter");
+    if !bin.exists() { eprintln!("approuter binary not found, skipping"); return; }
+
+    let mut child = Command::new(&bin)
+        .env("ROUTER_PORT", port.to_string())
+        .env("ROUTER_BIND", "127.0.0.1")
+        .env("ROUTER_NO_TUNNEL", "true")
+        .env("CF_API_BASE_URL", &mock_uri)
+        .env("CF_TOKEN", "test-token")
+        .env("CF_ACCOUNT_ID", "acc123")
+        .env_remove("ROUTER_API_KEY")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn");
+
+    if !wait_for_server(port, 10).await {
+        let _ = child.kill();
+        panic!("approuter did not start");
+    }
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post(format!("http://127.0.0.1:{}/approuter/dns/update-a", port))
+        .json(&serde_json::json!({"zone_id": "z1", "record_id": "r1", "content": "1.2.3.4"}))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .unwrap();
+
+    let _ = child.kill();
+    let _ = child.wait();
+
+    assert!(res.status().is_success(), "dns/update-a failed: {}", res.text().await.unwrap_or_default());
+}
+
+/// Backlog #8: Test CNAME creation via registration (f95 called during register).
+#[tokio::test]
+async fn register_creates_cname_via_mock() {
+    let mock_server = MockServer::start().await;
+    let mock_uri = mock_server.uri();
+
+    // Zone lookup
+    Mock::given(method("GET"))
+        .and(path_regex(r"^/client/v4/zones$"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "success": true,
+            "result": [{"id": "z2", "name": "newsite.com", "account": {"id": "acc2"}}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    // DNS record lookup (empty = will create)
+    Mock::given(method("GET"))
+        .and(path_regex(r"^/client/v4/zones/z2/dns_records"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "success": true, "result": []
+        })))
+        .mount(&mock_server)
+        .await;
+
+    // DNS record create
+    let cname_create = Mock::given(method("POST"))
+        .and(path_regex(r"^/client/v4/zones/z2/dns_records$"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "success": true, "result": {"id": "rec_new"}
+        })))
+        .expect(1)
+        .mount_as_scoped(&mock_server)
+        .await;
+
+    // Tunnel config update
+    Mock::given(method("PUT"))
+        .and(path_regex(r"^/client/v4/accounts/[^/]+/cfd_tunnel/[^/]+/configurations$"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "success": true, "result": {}
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let port = free_port();
+    let bin = std::env::current_exe().unwrap().parent().unwrap().parent().unwrap().join("approuter");
+    if !bin.exists() { eprintln!("approuter binary not found, skipping"); return; }
+
+    let mut child = Command::new(&bin)
+        .env("ROUTER_PORT", port.to_string())
+        .env("ROUTER_BIND", "127.0.0.1")
+        .env("ROUTER_NO_TUNNEL", "true")
+        .env("CF_API_BASE_URL", &mock_uri)
+        .env("CF_TOKEN", "test-token")
+        .env("CF_ACCOUNT_ID", "acc2")
+        .env("CF_TUNNEL_ID", "t2")
+        .env_remove("ROUTER_API_KEY")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn");
+
+    if !wait_for_server(port, 10).await {
+        let _ = child.kill();
+        panic!("approuter did not start");
+    }
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post(format!("http://127.0.0.1:{}/approuter/register", port))
+        .json(&serde_json::json!({
+            "app_id": "newsite",
+            "hostnames": ["newsite.com"],
+            "backend_url": "http://127.0.0.1:5000"
+        }))
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await
+        .unwrap();
+
+    let _ = child.kill();
+    let _ = child.wait();
+
+    assert!(res.status().is_success(), "register failed: {}", res.text().await.unwrap_or_default());
+
+    // The scoped mock verifies POST /dns_records was called exactly once (CNAME create)
+    drop(cname_create);
 }
