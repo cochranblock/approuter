@@ -5,7 +5,7 @@
 
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse},
     Json,
 };
@@ -27,8 +27,10 @@ pub async fn tunnels_status(State((mgr, _, _)): State<TunnelApiState>) -> impl I
 /// POST /approuter/tunnels/:provider/start — Start a specific provider.
 pub async fn tunnel_start(
     State((mgr, _, reg)): State<TunnelApiState>,
+    headers: HeaderMap,
     Path(provider): Path<String>,
 ) -> impl IntoResponse {
+    if let Some(resp) = crate::api::f139(&headers) { return resp; }
     let kind = match t44::from_str(&provider) {
         Some(k) => k,
         None => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
@@ -51,8 +53,10 @@ pub async fn tunnel_start(
 /// POST /approuter/tunnels/:provider/stop — Stop a specific provider.
 pub async fn tunnel_stop(
     State((mgr, _, _)): State<TunnelApiState>,
+    headers: HeaderMap,
     Path(provider): Path<String>,
 ) -> impl IntoResponse {
+    if let Some(resp) = crate::api::f139(&headers) { return resp; }
     let kind = match t44::from_str(&provider) {
         Some(k) => k,
         None => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "unknown provider"}))),

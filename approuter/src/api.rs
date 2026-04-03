@@ -52,7 +52,7 @@ pub type ApiState = (Arc<t32>, u16, Arc<Mutex<Option<Child>>>, PathBuf);
 
 /// f139 = check_api_key. If ROUTER_API_KEY is set, require Authorization: Bearer <key>.
 /// Returns None if authorized, Some(response) if rejected. No env var = auth disabled.
-fn f139(headers: &HeaderMap) -> Option<(StatusCode, Json<serde_json::Value>)> {
+pub(crate) fn f139(headers: &HeaderMap) -> Option<(StatusCode, Json<serde_json::Value>)> {
     let expected = match std::env::var("ROUTER_API_KEY") {
         Ok(k) if !k.is_empty() => k,
         _ => return None,
@@ -296,7 +296,8 @@ pub async fn f105(State((_, _, p2, _)): State<ApiState>, headers: HeaderMap) -> 
 }
 
 /// f106 = tunnel_ensure_handler. POST /approuter/tunnel/ensure. Downloads cloudflared to base/bin/ if missing.
-pub async fn f106(State((_, _, _, p3)): State<ApiState>) -> impl IntoResponse {
+pub async fn f106(State((_, _, _, p3)): State<ApiState>, headers: HeaderMap) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     match tunnel::f109(&p3).await {
         Ok(_) => (StatusCode::OK, Json(serde_json::json!({"ok": true, "message": "cloudflared ready"}))),
         Err(e) => (
