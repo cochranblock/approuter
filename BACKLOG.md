@@ -7,9 +7,9 @@ Tags: `[build]` `[test]` `[docs]` `[feature]` `[fix]` `[research]`
 
 ---
 
-1. `[test]` Add integration test for API key auth (ROUTER_API_KEY) — 401 without, 200 with, 200 when unset
-2. `[test]` Add integration test for hostname collision — 409 on duplicate, self-update allowed
-3. `[test]` Add integration test for /approuter/status — verify all products listed, health check results
+1. ~~`[test]` Add integration test for API key auth~~ DONE (api_hardening.rs)
+2. ~~`[test]` Add integration test for hostname collision~~ DONE (api_hardening.rs)
+3. ~~`[test]` Add integration test for /approuter/status~~ DONE (api_hardening.rs)
 4. `[feature]` Post-spawn health check loop in start-all — poll /health on each backend before declaring ready. Dep: cochranblock, oakilydokily, rogue-repo, ronin-sites must expose /health
 5. `[fix]` Proxy: replace per-handler `reqwest::Client::new()` in api.rs f110 (Google APIs) with shared or lazy client
 6. `[test]` Add proxy error tests — upstream timeout returns 502, unreachable backend returns 502 with analytics recorded
