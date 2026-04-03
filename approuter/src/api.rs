@@ -5,7 +5,7 @@
 
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse},
     Json,
 };
@@ -40,6 +40,25 @@ pub struct t33 {
 /// t35 = ApiState. (registry, port, tunnel_handle, config_base_dir). Tunnel handle is None when --no-tunnel.
 pub type ApiState = (Arc<t32>, u16, Arc<Mutex<Option<Child>>>, PathBuf);
 
+/// f139 = check_api_key. If ROUTER_API_KEY is set, require Authorization: Bearer <key>.
+/// Returns None if authorized, Some(response) if rejected. No env var = auth disabled.
+fn f139(headers: &HeaderMap) -> Option<(StatusCode, Json<serde_json::Value>)> {
+    let expected = match std::env::var("ROUTER_API_KEY") {
+        Ok(k) if !k.is_empty() => k,
+        _ => return None,
+    };
+    let provided = headers
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .unwrap_or("");
+    if provided == expected {
+        None
+    } else {
+        Some((StatusCode::UNAUTHORIZED, Json(serde_json::json!({"error": "unauthorized"}))))
+    }
+}
+
 /// Regenerate tunnel config and restart cloudflared if it was running.
 fn restart_tunnel_if_running(p0: &t32, p1: u16, p2: &Arc<Mutex<Option<Child>>>, p3: &std::path::Path) {
     if let Ok(mut guard) = p2.lock() {
@@ -68,8 +87,10 @@ fn restart_tunnel_if_running(p0: &t32, p1: u16, p2: &Arc<Mutex<Option<Child>>>, 
 /// f98 = register_handler. POST /approuter/register.
 pub async fn f98(
     State((p0, p1, p2, p3)): State<ApiState>,
+    headers: HeaderMap,
     Json(p4): Json<t33>,
 ) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     let v0 = p4.s47.clone();
     let app = t30 {
         s46: p4.s46,
@@ -89,10 +110,10 @@ pub async fn f98(
             }
             (StatusCode::OK, Json(serde_json::json!({"ok": true})))
         }
-        Err(e) => (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({"error": e})),
-        ),
+        Err(e) => {
+            let status = if e.starts_with("conflict:") { StatusCode::CONFLICT } else { StatusCode::BAD_REQUEST };
+            (status, Json(serde_json::json!({"error": e})))
+        }
     }
 }
 
@@ -103,7 +124,8 @@ pub async fn f99(State((p0, _, _, _)): State<ApiState>) -> impl IntoResponse {
 }
 
 /// f101 = dns_update_a_handler. POST /approuter/dns/update-a.
-pub async fn f101(Json(p0): Json<t34>) -> impl IntoResponse {
+pub async fn f101(headers: HeaderMap, Json(p0): Json<t34>) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     match cloudflare::f97(&p0.s6, &p0.s7, &p0.s8).await {
         Ok(()) => (StatusCode::OK, Json(serde_json::json!({"ok": true}))),
         Err(e) => (
@@ -135,7 +157,6 @@ pub async fn f110(Query(q): Query<t36>) -> impl IntoResponse {
     };
     match reqwest::Client::new()
         .get(url)
-        .timeout(std::time::Duration::from_secs(30))
         .send()
         .await
     {
@@ -191,8 +212,10 @@ pub async fn f103() -> impl IntoResponse {
 /// f100 = unregister_handler. DELETE /approuter/apps/:id.
 pub async fn f100(
     State((p0, p1, p2, p3)): State<ApiState>,
+    headers: HeaderMap,
     Path(p4): Path<String>,
 ) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     match p0.unregister(&p4) {
         Ok(true) => {
             if let Err(e) = cloudflare::f96(p0.as_ref(), p1).await {
@@ -242,7 +265,8 @@ pub async fn f104(State((_, _, p2, _)): State<ApiState>) -> impl IntoResponse {
 }
 
 /// f105 = tunnel_stop_handler. POST /approuter/tunnel/stop. Kills only this approuter's cloudflared child.
-pub async fn f105(State((_, _, p2, _)): State<ApiState>) -> impl IntoResponse {
+pub async fn f105(State((_, _, p2, _)): State<ApiState>, headers: HeaderMap) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     let mut guard = match p2.lock() {
         Ok(g) => g,
         Err(_) => {
@@ -273,7 +297,8 @@ pub async fn f106(State((_, _, _, p3)): State<ApiState>) -> impl IntoResponse {
 }
 
 /// f107 = tunnel_restart_handler. POST /approuter/tunnel/restart. Stops cloudflared and spawns a fresh instance.
-pub async fn f107(State((p0, p1, p2, p3)): State<ApiState>) -> impl IntoResponse {
+pub async fn f107(State((p0, p1, p2, p3)): State<ApiState>, headers: HeaderMap) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     let mut guard = match p2.lock() {
         Ok(g) => g,
         Err(_) => {
@@ -303,7 +328,8 @@ pub async fn f107(State((p0, p1, p2, p3)): State<ApiState>) -> impl IntoResponse
 }
 
 /// f108 = tunnel_fix_handler. POST /approuter/tunnel/fix. Ensures cloudflared binary exists, stops old instance, spawns fresh. Fix for 1033 etc.
-pub async fn f108(State((p0, p1, p2, p3)): State<ApiState>) -> impl IntoResponse {
+pub async fn f108(State((p0, p1, p2, p3)): State<ApiState>, headers: HeaderMap) -> impl IntoResponse {
+    if let Some(resp) = f139(&headers) { return resp; }
     if let Err(e) = tunnel::f109(&p3).await {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,

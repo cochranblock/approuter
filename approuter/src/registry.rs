@@ -42,7 +42,10 @@ impl t32 {
             if let Some(parent) = data_path.parent() {
                 let _ = std::fs::create_dir_all(parent);
             }
-            let _ = std::fs::copy(&legacy_path, &data_path);
+            match std::fs::copy(&legacy_path, &data_path) {
+                Ok(_) => tracing::info!("Registry migrated from {} to {}", legacy_path.display(), data_path.display()),
+                Err(e) => tracing::warn!("Registry migration failed ({} -> {}): {}", legacy_path.display(), data_path.display(), e),
+            }
         }
         let data = Self::f102(&data_path);
         Self {
@@ -68,6 +71,21 @@ impl t32 {
         Ok(())
     }
 
+    /// f138 = check_hostname_conflicts. Returns Err("conflict:...") if any hostname is already claimed by another app.
+    fn f138(apps: &[t30], app_id: &str, hostnames: &[String]) -> Result<(), String> {
+        for h in hostnames {
+            for existing in apps {
+                if existing.s46 == app_id {
+                    continue;
+                }
+                if existing.s47.iter().any(|eh| eh.eq_ignore_ascii_case(h)) {
+                    return Err(format!("conflict: hostname '{}' already claimed by app '{}'", h, existing.s46));
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Register or update app. Persists, then caller updates tunnel.
     pub fn register(&self, p0: t30) -> Result<(), String> {
         let backend = p0.s48.trim_end_matches('/').to_string();
@@ -75,6 +93,7 @@ impl t32 {
             return Err("backend_url cannot be empty".into());
         }
         let mut data = self.data.write().map_err(|e| e.to_string())?;
+        Self::f138(&data.apps, &p0.s46, &p0.s47)?;
         let apps = &mut data.apps;
         if let Some(existing) = apps.iter_mut().find(|a| a.s46 == p0.s46) {
             existing.s47 = p0.s47;
@@ -204,6 +223,36 @@ mod tests {
         assert_eq!(reg.get_backend(Some("deep.sub.ronin-sites.pro"), "/"), Some("http://127.0.0.1:8000".into()));
         // Should NOT match bare suffix without subdomain
         assert_eq!(reg.get_backend(Some("notronin-sites.pro"), "/"), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn hostname_collision_rejected() {
+        let dir = std::env::temp_dir().join(format!("approuter_reg_collision_{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let reg = t32::new(&dir);
+        reg.register(t30 {
+            s46: "app-a".into(),
+            s47: vec!["shared.example.com".into()],
+            s48: "http://127.0.0.1:3000".into(),
+        })
+        .unwrap();
+        let err = reg
+            .register(t30 {
+                s46: "app-b".into(),
+                s47: vec!["shared.example.com".into()],
+                s48: "http://127.0.0.1:4000".into(),
+            })
+            .unwrap_err();
+        assert!(err.starts_with("conflict:"), "expected conflict error, got: {}", err);
+        assert!(err.contains("app-a"));
+        // Self-update should still work
+        reg.register(t30 {
+            s46: "app-a".into(),
+            s47: vec!["shared.example.com".into(), "new.example.com".into()],
+            s48: "http://127.0.0.1:3000".into(),
+        })
+        .unwrap();
         let _ = std::fs::remove_dir_all(&dir);
     }
 

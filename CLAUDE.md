@@ -7,4 +7,4 @@
 - Build: cargo build -p approuter
 - Run all: cargo run -p approuter --release -- start-all
 - Products live in separate repos; approuter points to them via env vars (ROUTER_COCHRANBLOCK_URL, etc.)
-- 14 modules, 4,116 LOC. Key: main.rs (CLI + server), cloudflare.rs (CF API), tunnel_provider.rs (multi-tunnel), analytics.rs (geo analytics), proxy.rs (reverse proxy), registry.rs (app registry).
+- 16 modules, 4,253 LOC. Key: main.rs (CLI + server), cloudflare/ (CF API, split: mod.rs + dns.rs + tunnel.rs), tunnel_provider.rs (multi-tunnel), analytics.rs (geo analytics), proxy.rs (reverse proxy), registry.rs (app registry + collision detection), api.rs (REST API + API key auth).

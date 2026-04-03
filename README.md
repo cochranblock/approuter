@@ -60,22 +60,24 @@ flowchart LR
 
 | Module | LOC | Purpose |
 |--------|-----|---------|
-| main.rs | 359 | CLI (clap), axum server, route wiring, health + analytics handlers |
-| cloudflare.rs | 978 | Full Cloudflare API: zones, CNAME, tunnel sync, ingress rules, rate limits, cache rules |
+| cloudflare/tunnel.rs | 476 | Tunnel ingress sync, setup workflows (f53/f54/f96/f96a) |
 | tunnel_provider.rs | 459 | Multi-tunnel abstraction: Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel |
-| run.rs | 406 | `start-all` command: spawns approuter + all backends + cloudflared |
-| api.rs | 338 | REST API: register, unregister, list apps, DNS update, tunnel control, dashboard |
+| run.rs | 418 | `start-all` command: spawns approuter + all backends + cloudflared |
+| cloudflare/dns.rs | 369 | DNS CNAME management (f95/f97), per-zone setup (f93/f94_ronin) |
+| api.rs | 364 | REST API: register, unregister, list apps, DNS update, tunnel control, API key auth |
+| main.rs | 362 | CLI (clap), axum server, route wiring, health + analytics handlers |
 | analytics.rs | 292 | Server-side visitor analytics from Cloudflare geo headers (zero JS, zero cookies) |
+| registry.rs | 275 | App registry: hostname -> backend_url, file-persisted, collision detection, wildcard matching |
 | restart.rs | 236 | Per-service restart subcommands (pkill + cargo build + exec) |
-| tunnel_metrics.rs | 230 | Per-provider latency, uptime, error tracking with percentile stats |
-| registry.rs | 226 | App registry: hostname → backend_url, file-persisted, thread-safe RwLock, wildcard matching |
+| tunnel_metrics.rs | 220 | Per-provider latency, uptime, error tracking with percentile stats |
 | proxy.rs | 184 | Reverse proxy: host-based, path-based, suffix matching, 30s timeout |
+| cloudflare/mod.rs | 160 | Shared CF client (LazyLock), constants, token verify, tunnel token fetch |
 | tunnel.rs | 156 | Cloudflare tunnel: config generation, cloudflared spawn, binary download + SHA256 verify |
 | tunnel_api.rs | 111 | Multi-tunnel API: status, start/stop, health, metrics, competition dashboard |
 | setup.rs | 96 | Setup subcommands: purge-cache, cache rules, rate limit, DNS, Google SA |
 | client/src/lib.rs | 75 | approuter-client crate: retry-based self-registration for backends |
 
-**4,146 lines of Rust** across 14 modules.
+**4,253 lines of Rust** across 16 modules.
 
 ## Build
 
@@ -98,32 +100,33 @@ TUNNEL_NGROK=1 NGROK_AUTHTOKEN=xxx cargo run -p approuter
 
 ## API Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /health | Liveness check |
-| GET | /approuter/health | Liveness check (prefixed) |
-| GET | /approuter/ | Dashboard HTML |
-| POST | /approuter/register | Register app (hostname → backend) |
-| GET | /approuter/apps | List registered apps |
-| DELETE | /approuter/apps/:id | Unregister app |
-| POST | /approuter/dns/update-a | Update DNS A record via CF API |
-| GET | /approuter/openapi.json | OpenAPI spec |
-| GET | /approuter/tunnel | Legacy tunnel status |
-| POST | /approuter/tunnel/stop | Stop legacy tunnel |
-| POST | /approuter/tunnel/ensure | Download cloudflared if missing |
-| POST | /approuter/tunnel/restart | Restart legacy tunnel |
-| POST | /approuter/tunnel/fix | Ensure + restart (fix 1033) |
-| GET | /approuter/tunnels | Multi-tunnel status (all providers) |
-| GET | /approuter/tunnels/health | Health check all providers |
-| GET | /approuter/tunnels/metrics | Latency/uptime comparison |
-| GET | /approuter/tunnels/metrics/probes | Raw probe data |
-| GET | /approuter/tunnels/compete | Multi-tunnel competition dashboard |
-| POST | /approuter/tunnels/:provider/start | Start a provider |
-| POST | /approuter/tunnels/:provider/stop | Stop a provider |
-| GET | /approuter/analytics | Analytics dashboard |
-| GET | /approuter/analytics/data | Aggregate analytics (per-site) |
-| GET | /approuter/analytics/recent | Recent request events |
-| GET | /approuter/google/apis | Google Discovery API proxy |
+Mutating endpoints require `Authorization: Bearer <key>` when `ROUTER_API_KEY` is set. Read-only endpoints are always public.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /health | - | Liveness check |
+| GET | /approuter/ | - | Dashboard HTML |
+| POST | /approuter/register | key | Register app (hostname -> backend). Returns 409 on hostname collision |
+| GET | /approuter/apps | - | List registered apps |
+| DELETE | /approuter/apps/:id | key | Unregister app |
+| POST | /approuter/dns/update-a | key | Update DNS A/AAAA record via CF API |
+| GET | /approuter/openapi.json | - | OpenAPI spec |
+| GET | /approuter/tunnel | - | Tunnel status |
+| POST | /approuter/tunnel/stop | key | Stop tunnel |
+| POST | /approuter/tunnel/ensure | - | Download cloudflared if missing |
+| POST | /approuter/tunnel/restart | key | Restart tunnel |
+| POST | /approuter/tunnel/fix | key | Ensure + restart (fix 1033) |
+| GET | /approuter/tunnels | - | Multi-tunnel status (all providers) |
+| GET | /approuter/tunnels/health | - | Health check all providers |
+| GET | /approuter/tunnels/metrics | - | Latency/uptime comparison |
+| GET | /approuter/tunnels/metrics/probes | - | Raw probe data |
+| GET | /approuter/tunnels/compete | - | Multi-tunnel competition dashboard |
+| POST | /approuter/tunnels/:provider/start | - | Start a provider |
+| POST | /approuter/tunnels/:provider/stop | - | Stop a provider |
+| GET | /approuter/analytics | - | Analytics dashboard |
+| GET | /approuter/analytics/data | - | Aggregate analytics (per-site) |
+| GET | /approuter/analytics/recent | - | Recent request events |
+| GET | /approuter/google/apis | - | Google Discovery API proxy |
 
 ## Local development
 
