@@ -13,9 +13,19 @@ use std::path::PathBuf;
 use std::process::Child;
 use std::sync::{Arc, Mutex};
 
+use std::sync::LazyLock;
+
 use crate::cloudflare;
 use crate::registry::{t30, t32};
 use crate::tunnel;
+
+/// Shared HTTP client for non-CF API calls (Google Discovery, etc.)
+static API_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .unwrap_or_default()
+});
 
 #[derive(serde::Deserialize)]
 pub struct t34 {
@@ -155,7 +165,7 @@ pub async fn f110(Query(q): Query<t36>) -> impl IntoResponse {
     } else {
         "https://discovery.googleapis.com/discovery/v1/apis"
     };
-    match reqwest::Client::new()
+    match API_CLIENT
         .get(url)
         .send()
         .await

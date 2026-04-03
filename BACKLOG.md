@@ -11,7 +11,7 @@ Tags: `[build]` `[test]` `[docs]` `[feature]` `[fix]` `[research]`
 2. ~~`[test]` Add integration test for hostname collision~~ DONE (api_hardening.rs)
 3. ~~`[test]` Add integration test for /approuter/status~~ DONE (api_hardening.rs)
 4. `[feature]` Post-spawn health check loop in start-all — poll /health on each backend before declaring ready. Dep: cochranblock, oakilydokily, rogue-repo, ronin-sites must expose /health
-5. `[fix]` Proxy: replace per-handler `reqwest::Client::new()` in api.rs f110 (Google APIs) with shared or lazy client
+5. ~~`[fix]` Replace reqwest::Client::new() in api.rs f110 with shared lazy client~~ DONE
 6. `[test]` Add proxy error tests — upstream timeout returns 502, unreachable backend returns 502 with analytics recorded
 7. `[feature]` Startup env validation in start-all — warn on missing RONIN_ROOT, ROGUE_REPO_ROOT, DATABASE_URL before spawning
 8. `[test]` Add cloudflare DNS mock tests — f95 (ensure_cname), f97 (update A/AAAA) against wiremock
