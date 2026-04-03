@@ -18,7 +18,7 @@ Tags: `[build]` `[test]` `[docs]` `[feature]` `[fix]` `[research]`
 9. `[build]` systemd unit files for gd deployment — approuter.service + per-product services. Dep: gd node (n1) accessible
 10. `[feature]` Circuit breaker per backend — if /health fails N times, skip proxy and return 503 until recovery. Prevents cascading timeouts
 11. `[test]` Tunnel provider spawn tests — verify ngrok/bore/localtunnel spawn and stop lifecycle with mock binaries
-12. `[docs]` TROUBLESHOOTING.md — CF token errors (expired, wrong permissions, 403), tunnel 1033/502/520, backend unreachable
+12. ~~`[docs]` TROUBLESHOOTING.md — CF token errors, backend unreachable, API auth, hostname collision~~ DONE
 13. `[feature]` Analytics retention — prune events older than N days (configurable via ROUTER_ANALYTICS_RETENTION_DAYS, default 30)
 14. `[research]` P23 triple-lens on multi-tunnel architecture — are ngrok/bore/localtunnel providers tested in production? Worth keeping or dead code?
 15. `[feature]` Webhook on product health change — POST to configurable URL when a product goes healthy->unhealthy or vice versa. Dep: /approuter/status health check loop
