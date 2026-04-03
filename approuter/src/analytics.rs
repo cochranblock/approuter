@@ -64,6 +64,16 @@ impl t42 {
             tracing::info!("[analytics] loaded {} events from disk", count);
         }
 
+        // Prune old JSONL files on startup
+        let retention_days: u64 = std::env::var("ROUTER_ANALYTICS_RETENTION_DAYS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(30);
+        let pruned = Self::prune_old_files(&data_dir, retention_days);
+        if pruned > 0 {
+            tracing::info!("[analytics] pruned {} files older than {} days", pruned, retention_days);
+        }
+
         Self {
             events: Mutex::new(events),
             data_dir,
@@ -200,6 +210,31 @@ impl t42 {
             .filter_map(|l| serde_json::from_str(l).ok())
             .collect();
         Some(events)
+    }
+
+    /// Delete analytics JSONL files older than `retention_days`. Returns count deleted.
+    fn prune_old_files(dir: &Path, retention_days: u64) -> usize {
+        let now_day = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() / 86400;
+        let cutoff_day = now_day.saturating_sub(retention_days);
+        let mut pruned = 0;
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                // files are events_{day_number}.jsonl
+                if let Some(day_str) = name.strip_prefix("events_").and_then(|s| s.strip_suffix(".jsonl")) {
+                    if let Ok(day) = day_str.parse::<u64>() {
+                        if day < cutoff_day && std::fs::remove_file(entry.path()).is_ok() {
+                            pruned += 1;
+                        }
+                    }
+                }
+            }
+        }
+        pruned
     }
 
     fn save_events(dir: &Path, events: &[t40]) -> Result<(), String> {
