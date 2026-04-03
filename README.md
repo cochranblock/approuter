@@ -65,7 +65,7 @@ flowchart LR
 | run.rs | 418 | `start-all` command: spawns approuter + all backends + cloudflared |
 | cloudflare/dns.rs | 369 | DNS CNAME management (f95/f97), per-zone setup (f93/f94_ronin) |
 | api.rs | 451 | REST API: register, unregister, list apps, DNS update, tunnel control, API key auth, live status |
-| main.rs | 362 | CLI (clap), axum server, route wiring, health + analytics handlers |
+| main.rs | 364 | CLI (clap), axum server, route wiring, health + analytics handlers |
 | analytics.rs | 292 | Server-side visitor analytics from Cloudflare geo headers (zero JS, zero cookies) |
 | registry.rs | 275 | App registry: hostname -> backend_url, file-persisted, collision detection, wildcard matching |
 | restart.rs | 236 | Per-service restart subcommands (pkill + cargo build + exec) |
@@ -131,4 +131,20 @@ Mutating endpoints require `Authorization: Bearer <key>` when `ROUTER_API_KEY` i
 
 ## Local development
 
-Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_COCHRANBLOCK_URL`, `ROUTER_OAKILYDOKILY_HOST`). See [approuter/docs/ROUTER.md](approuter/docs/ROUTER.md) for env vars and routing modes.
+Clone the product repos alongside this one. Run approuter; it will route to backends by URL (e.g. `ROUTER_COCHRANBLOCK_URL`, `ROUTER_OAKILYDOKILY_HOST`). See [approuter/docs/ROUTER.md](approuter/docs/ROUTER.md) for env vars, routing modes, API key auth, and live status.
+
+## Live Products
+
+| Product | URL | Port |
+|---------|-----|------|
+| cochranblock | [cochranblock.org](https://cochranblock.org) | 8081 |
+| oakilydokily | [oakilydokily.com](https://oakilydokily.com) | 3000 |
+| rogue-repo | [roguerepo.io](https://roguerepo.io) | 3001 |
+| ronin-sites | [ronin-sites.pro](https://ronin-sites.pro) | 8000 |
+
+## More
+
+- [Routing docs](approuter/docs/ROUTER.md) — env vars, routing modes, registration API, API key auth
+- [Proof of Artifacts](PROOF_OF_ARTIFACTS.md) — build metrics, architecture diagram, verification commands
+- [Timeline of Invention](TIMELINE_OF_INVENTION.md) — dated commit-level record of development
+- [OpenAPI spec](approuter/openapi.json) — machine-readable API definition

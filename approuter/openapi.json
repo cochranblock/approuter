@@ -55,6 +55,15 @@
         "responses": {"200": {"description": "Unregistered", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OkResponse"}}}}, "404": {"description": "App not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}
       }
     },
+    "/approuter/status": {
+      "get": {
+        "summary": "Live product status",
+        "description": "Health-checks all registered products in parallel. Returns each product's name, backend URL, hostnames, health status, HTTP status code, and latency. No auth required.",
+        "operationId": "status",
+        "tags": ["status"],
+        "responses": {"200": {"description": "Status of all products", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StatusResponse"}}}}}
+      }
+    },
     "/approuter/dns/update-a": {
       "post": {
         "summary": "Update DNS A/AAAA record",
@@ -328,7 +337,9 @@
       "ProviderMetrics": {"type": "object", "properties": {"provider": {"type": "string"}, "total_probes": {"type": "integer"}, "successful_probes": {"type": "integer"}, "failed_probes": {"type": "integer"}, "avg_latency_ms": {"type": "number"}, "p50_latency_ms": {"type": "integer"}, "p95_latency_ms": {"type": "integer"}, "p99_latency_ms": {"type": "integer"}, "uptime_pct": {"type": "number"}, "start_count": {"type": "integer"}}},
       "AnalyticsEvent": {"type": "object", "properties": {"ts": {"type": "integer"}, "host": {"type": "string"}, "path": {"type": "string"}, "method": {"type": "string"}, "status": {"type": "integer"}, "duration_ms": {"type": "integer"}, "country": {"type": "string"}, "city": {"type": "string"}, "region": {"type": "string"}, "ua_family": {"type": "string"}, "is_bot": {"type": "boolean"}}},
       "SiteStats": {"type": "object", "properties": {"total_requests": {"type": "integer"}, "total_page_views": {"type": "integer"}, "unique_ips": {"type": "integer"}, "countries": {"type": "object"}, "cities": {"type": "object"}, "paths": {"type": "object"}, "status_codes": {"type": "object"}, "bot_requests": {"type": "integer"}, "human_requests": {"type": "integer"}}},
-      "RoninRegisterRequest": {"type": "object", "required": ["email", "password", "full_name", "shop_name", "subdomain", "plan_tier"], "properties": {"email": {"type": "string"}, "password": {"type": "string"}, "full_name": {"type": "string"}, "shop_name": {"type": "string"}, "subdomain": {"type": "string"}, "plan_tier": {"type": "string", "enum": ["artist", "manager"]}, "profile_image_url": {"type": "string"}}}
+      "RoninRegisterRequest": {"type": "object", "required": ["email", "password", "full_name", "shop_name", "subdomain", "plan_tier"], "properties": {"email": {"type": "string"}, "password": {"type": "string"}, "full_name": {"type": "string"}, "shop_name": {"type": "string"}, "subdomain": {"type": "string"}, "plan_tier": {"type": "string", "enum": ["artist", "manager"]}, "profile_image_url": {"type": "string"}}},
+      "ProductStatus": {"type": "object", "properties": {"product": {"type": "string"}, "backend": {"type": "string"}, "hostnames": {"type": "array", "items": {"type": "string"}}, "healthy": {"type": "boolean"}, "status_code": {"type": "integer"}, "latency_ms": {"type": "integer"}}},
+      "StatusResponse": {"type": "object", "properties": {"approuter": {"type": "string", "example": "ok"}, "products": {"type": "array", "items": {"$ref": "#/components/schemas/ProductStatus"}}, "summary": {"type": "object", "properties": {"total": {"type": "integer"}, "healthy": {"type": "integer"}, "unhealthy": {"type": "integer"}}}}}
     },
     "securitySchemes": {
       "cookieAuth": {"type": "apiKey", "in": "cookie", "name": "access_token", "description": "Bearer token in access_token cookie"}

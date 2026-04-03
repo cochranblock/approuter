@@ -27,11 +27,11 @@ flowchart LR
 
 | Metric | Value |
 |--------|-------|
-| Lines of Rust | 4,146 across 14 modules |
-| Largest module | cloudflare.rs (978 LOC) — full CF API integration |
-| Routing modes | Host-based, path-based, suffix matching |
-| API endpoints | 22 routes — register, apps, DNS, tunnel control, multi-tunnel, analytics, dashboard |
-| Credential model | Centralized — apps never touch CF_TOKEN |
+| Lines of Rust | 4,342 across 16 modules |
+| Largest module | cloudflare/ (1,005 LOC across 3 files) — DNS, tunnel sync, token auth |
+| Routing modes | Host-based, path-based, suffix matching, wildcard (*.domain) |
+| API endpoints | 23 routes — register, apps, DNS, tunnel control, multi-tunnel, analytics, live status |
+| Credential model | Centralized — apps never touch CF_TOKEN. Mutating endpoints gated by ROUTER_API_KEY |
 | Tunnel providers | Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel (multi-tunnel with competition metrics) |
 | Analytics | Server-side from CF geo headers — zero JS, zero cookies, city-level geo |
 | Binary optimization | opt-level=z, LTO, strip, panic=abort |
@@ -40,7 +40,9 @@ flowchart LR
 
 | Artifact | Description |
 |----------|-------------|
-| Dynamic Registry | Apps self-register via HTTP — zero-downtime, file-persisted, thread-safe RwLock |
+| Dynamic Registry | Apps self-register via HTTP — zero-downtime, file-persisted, thread-safe RwLock, hostname collision detection (409) |
+| Live Status | GET /approuter/status — parallel health check of all products with latency, hostnames, backend URLs |
+| API Key Auth | ROUTER_API_KEY env var gates mutating endpoints (register, unregister, DNS, tunnel). Unset = open |
 | Cloudflare Integration | Zone management, CNAME creation, tunnel sync, ingress rules, rate limits, cache rules |
 | Multi-Tunnel Provider | Abstraction over 5 tunnel providers with spawn/stop/health check per provider |
 | Tunnel Metrics | Per-provider latency tracking (p50/p95/p99), uptime percentage, streak counting |
@@ -59,6 +61,7 @@ flowchart LR
 ```bash
 cargo build --release -p approuter
 cargo run -p approuter --release -- start-all   # Launches everything
+curl localhost:8080/approuter/status             # Live health of all products
 curl localhost:8080/approuter/apps               # List registered apps
 curl localhost:8080/approuter/openapi.json       # API spec
 ```
@@ -66,3 +69,5 @@ curl localhost:8080/approuter/openapi.json       # API spec
 ---
 
 *Part of the [CochranBlock](https://cochranblock.org) zero-cloud architecture. All source under the Unlicense.*
+
+**Live products:** [cochranblock.org](https://cochranblock.org) | [oakilydokily.com](https://oakilydokily.com) | [roguerepo.io](https://roguerepo.io) | [ronin-sites.pro](https://ronin-sites.pro)

@@ -41,6 +41,7 @@ Set `ROUTER_OAKILYDOKILY_PATH=/oakilydokily`. Requests to `/oakilydokily` or `/o
 | ROUTER_RONIN_SUFFIX | — | Suffix match (e.g. .ronin-sites.pro) — any host ending with this routes to Ronin |
 | ROUTER_NO_TUNNEL | false | Disable tunnel spawn on startup |
 | ROUTER_CONFIG_DIR | — | Override base directory for data/ and bin/ |
+| ROUTER_API_KEY | — | Bearer token for mutating endpoints. Unset = auth disabled |
 
 ## Cloudflare Tunnel Config
 
@@ -106,6 +107,36 @@ CF_ACCOUNT_ID=xxx CF_TOKEN=xxx cargo run -p approuter -- --update-tunnel
 3. **Local config** — `data/cloudflared.yml` (approuter-generated) includes roguerepo.io. Router routes it to cochranblock (Rogue Repo product).
 ```
 
+## Live Status
+
+```bash
+curl http://127.0.0.1:8080/approuter/status
+```
+
+Returns JSON with every routed product, its backend URL, hostnames, health status, HTTP status code, and response latency. No auth required.
+
+```json
+{
+  "approuter": "ok",
+  "products": [
+    {"product": "cochranblock", "backend": "http://127.0.0.1:8081", "hostnames": ["cochranblock.org"], "healthy": true, "status_code": 200, "latency_ms": 2},
+    {"product": "oakilydokily", "backend": "http://127.0.0.1:3000", "hostnames": ["oakilydokily.com"], "healthy": false, "status_code": 0, "latency_ms": 3001}
+  ],
+  "summary": {"total": 4, "healthy": 1, "unhealthy": 3}
+}
+```
+
+## API Key Auth
+
+Set `ROUTER_API_KEY` to require `Authorization: Bearer <key>` on mutating endpoints:
+
+- POST /approuter/register
+- DELETE /approuter/apps/:id
+- POST /approuter/dns/update-a
+- POST /approuter/tunnel/stop, /restart, /fix
+
+Read-only endpoints (list, status, dashboard, analytics) are always public. If `ROUTER_API_KEY` is unset, all endpoints are open (backward compatible).
+
 ## App Registration (centralized CF_TOKEN)
 
 Apps can register themselves with the router. The router holds **CF_TOKEN** (and CF_ACCOUNT_ID) centrally; apps no longer need Cloudflare API tokens.
@@ -123,6 +154,8 @@ curl -X POST http://127.0.0.1:8080/approuter/register \
 - **backend_url**: Upstream URL (e.g. `http://127.0.0.1:3000`).
 
 On success, the router updates the Cloudflare tunnel ingress so these hostnames route to the router. Registry is persisted to `data/registry.json`.
+
+**Hostname collision:** If another app already owns a hostname, registration returns **409 Conflict**. Updating your own app's hostnames (same app_id) is allowed.
 
 ### List / unregister
 

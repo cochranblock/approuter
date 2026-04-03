@@ -10,6 +10,24 @@
 
 ## Entries
 
+### 2026-04-02 — Live Status Endpoint
+
+**What:** Added GET /approuter/status. Health-checks all registered products in parallel (3s timeout). Returns product name, backend URL, hostnames, healthy/unhealthy, HTTP status code, and latency for every routed service. The cross-reference — no lying about what's running.
+**Commit:** `0e2138b`
+**AI Role:** AI implemented f140 handler and StatusState type. Human specified the transparency requirement.
+
+### 2026-04-02 — QA Hardening
+
+**What:** Five-phase hardening pass. (1) Shared reqwest::Client across all Cloudflare API calls (was 10 separate instances). (2) Registry migration logging. (3) Hostname collision detection — register returns 409 Conflict if another app owns the hostname. (4) API key auth on mutating endpoints via ROUTER_API_KEY. (5) Split cloudflare.rs (978 LOC) into cloudflare/mod.rs + dns.rs + tunnel.rs.
+**Commit:** `b207918`
+**AI Role:** AI executed full QA audit and implemented all five phases. Human directed the audit scope.
+
+### 2026-03-30 — Stale Tunnel Port Fix
+
+**What:** Fixed bug where f96a (tunnel ingress sync) ran on startup even with --no-tunnel, pushing dev/test ephemeral ports (50433, 57701) to the Cloudflare dashboard. Production cloudflared then fetched the wrong port. Fix: gate f96a behind --no-tunnel flag, and sync explicitly before spawning cloudflared in start-all.
+**Commit:** `37631f1`
+**AI Role:** AI diagnosed root cause and fixed both code paths. Human reported the production failure.
+
 ### 2026-03-27 — Server-Side Analytics
 
 **What:** Added server-side visitor analytics from Cloudflare geo headers. Zero JS, zero cookies, city-level geo for free. JSONL persistence, per-site stats, bot detection, analytics dashboard.
