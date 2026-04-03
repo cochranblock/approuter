@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>approuter status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,monospace;background:#0a0a0a;color:#e0e0e0;padding:20px}
+h1{font-size:1.4em;color:#60a5fa;margin-bottom:4px}
+.sub{color:#888;font-size:0.85em;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-bottom:20px}
+.card{background:#141414;border:1px solid #222;border-radius:6px;padding:16px}
+.card.up{border-color:#22c55e}
+.card.down{border-color:#ef4444}
+.name{font-size:1.1em;font-weight:bold;margin-bottom:6px}
+.name .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.up .dot{background:#22c55e}
+.down .dot{background:#ef4444}
+.meta{font-size:0.82em;color:#888;line-height:1.6}
+.meta a{color:#60a5fa;text-decoration:none}
+.meta a:hover{text-decoration:underline}
+.summary{background:#141414;border:1px solid #222;border-radius:6px;padding:14px;display:flex;gap:24px;margin-bottom:16px;font-size:0.9em}
+.summary .n{font-size:1.6em;font-weight:bold}
+.summary .up-n{color:#22c55e}
+.summary .down-n{color:#ef4444}
+.summary .total-n{color:#60a5fa}
+.refresh{color:#888;font-size:0.8em;margin-top:12px}
+</style>
+</head>
+<body>
+<h1>approuter status</h1>
+<p class="sub">live health check &mdash; auto-refresh 15s</p>
+<div class="summary" id="summary">loading...</div>
+<div class="grid" id="grid"></div>
+<p class="refresh" id="ts"></p>
+<script>
+async function load(){
+  try{
+    const r=await fetch('/approuter/status');
+    const d=await r.json();
+    const s=d.summary||{};
+    document.getElementById('summary').innerHTML=
+      `<div><div class="n total-n">${s.total||0}</div>products</div>`+
+      `<div><div class="n up-n">${s.healthy||0}</div>healthy</div>`+
+      `<div><div class="n down-n">${s.unhealthy||0}</div>unhealthy</div>`;
+    const g=document.getElementById('grid');
+    g.innerHTML='';
+    for(const p of d.products||[]){
+      const ok=p.healthy;
+      const c=document.createElement('div');
+      c.className='card '+(ok?'up':'down');
+      const hosts=(p.hostnames||[]).map(h=>`<a href="https://${h}" target="_blank">${h}</a>`).join(', ');
+      c.innerHTML=
+        `<div class="name"><span class="dot"></span>${p.product}</div>`+
+        `<div class="meta">`+
+        `backend: ${p.backend}<br>`+
+        `hostnames: ${hosts}<br>`+
+        `status: ${p.status_code||'unreachable'} &middot; ${p.latency_ms}ms`+
+        `</div>`;
+      g.appendChild(c);
+    }
+    document.getElementById('ts').textContent='updated '+new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById('summary').textContent='error: '+e.message;
+  }
+}
+load();
+setInterval(load,15000);
+</script>
+</body>
+</html>

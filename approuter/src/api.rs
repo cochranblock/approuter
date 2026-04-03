@@ -377,6 +377,11 @@ pub async fn f108(State((p0, p1, p2, p3)): State<ApiState>, headers: HeaderMap) 
 /// t37 = StatusState. (registry, legacy_config).
 pub type StatusState = (Arc<t32>, Arc<crate::proxy::t29>);
 
+/// f141 = status_dashboard. GET /approuter/status/. HTML dashboard with auto-refresh.
+pub async fn f141() -> impl IntoResponse {
+    Html(include_str!("../status.html"))
+}
+
 /// f140 = status_handler. GET /approuter/status. Live health check of all products.
 pub async fn f140(State((registry, legacy)): State<StatusState>) -> impl IntoResponse {
     let client = reqwest::Client::builder()

@@ -23,8 +23,8 @@ Tags: `[build]` `[test]` `[docs]` `[feature]` `[fix]` `[research]`
 14. `[research]` P23 triple-lens on multi-tunnel architecture — are ngrok/bore/localtunnel providers tested in production? Worth keeping or dead code?
 15. `[feature]` Webhook on product health change — POST to configurable URL when a product goes healthy->unhealthy or vice versa. Dep: /approuter/status health check loop
 16. `[docs]` MULTI_TUNNEL_GUIDE.md — provider comparison (pricing, latency, reliability), when to enable each, env vars
-17. `[build]` Reduce binary size — measure current release size, try strip + LTO + panic=abort if not already set. Target: <5MB
-18. `[feature]` /approuter/status HTML view — human-readable dashboard (like /approuter/analytics) showing live product health grid
+17. ~~`[build]` Binary size — already 4.8MB with LTO+strip+panic=abort+codegen-units=1. Target <5MB met~~ DONE
+18. ~~`[feature]` /approuter/status/ HTML dashboard — product health grid, auto-refresh 15s~~ DONE
 19. `[test]` Analytics storage tests — verify JSONL persistence, stats_all_sites aggregation, bot detection accuracy
 20. `[research]` Rate limiting at proxy layer — should approuter enforce per-IP rate limits, or leave it to Cloudflare? Dep: cochranblock traffic patterns
 

@@ -292,6 +292,7 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .route("/approuter/analytics/recent", get(analytics_recent))
         .with_state(analytics_store.clone())
         .route("/approuter/status", get(api::f140))
+        .route("/approuter/status/", get(api::f141))
         .with_state((registry.clone(), v2.clone()));
 
     let r0 = api_router
