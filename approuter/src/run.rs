@@ -56,11 +56,19 @@ fn load_cf_env_from(path: &std::path::Path) {
 }
 
 fn pkill(pattern: &str) {
-    let _ = Command::new("pkill")
-        .args(["-f", pattern])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+    // Use pgrep to find PIDs, exclude our own PID and parent (SSH session).
+    let my_pid = std::process::id().to_string();
+    let ppid = std::fs::read_to_string("/proc/self/stat")
+        .ok()
+        .and_then(|s| s.split_whitespace().nth(3).map(String::from))
+        .unwrap_or_default();
+    if let Ok(out) = Command::new("pgrep").args(["-f", pattern]).output() {
+        for line in String::from_utf8_lossy(&out.stdout).lines() {
+            let pid = line.trim();
+            if pid == my_pid || pid == ppid || pid.is_empty() { continue; }
+            let _ = Command::new("kill").arg(pid).status();
+        }
+    }
 }
 
 fn env_or(key: &str, default: &str) -> String {
