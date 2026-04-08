@@ -8,6 +8,60 @@
 
 ---
 
+## Human Revelations — Invented Techniques
+
+*Novel ideas that came from human insight, not AI suggestion. These are original contributions to the field.*
+
+### Multi-Tunnel Abstraction (March 2026)
+
+**Invention:** A single API that abstracts Cloudflare Tunnels, ngrok, Tailscale, and Bore behind one interface — apps register once and the tunnel provider is swappable without changing any application code.
+
+**The Problem:** Every tunnel provider has its own CLI, configuration, and API. Switching from ngrok to Cloudflare Tunnels means rewriting deployment scripts. Running multiple tunnels for different services means managing multiple configs. The application shouldn't know or care how it reaches the internet.
+
+**The Insight:** A reverse proxy already sits between the internet and the application. If the proxy manages the tunnel, the application only needs to know its local port. The tunnel becomes an implementation detail of the proxy, not the application. One binary, one config, any tunnel provider.
+
+**The Technique:**
+1. `tunnel_provider.rs`: trait-based abstraction over tunnel providers
+2. Cloudflare, ngrok, Tailscale, Bore all implement the same interface
+3. Apps register with approuter via REST API — approuter handles DNS, tunnel ingress, health checks
+4. Switching providers = changing one env var, zero app changes
+5. Tunnel ingress sync on startup prevents stale port bugs
+
+**Result:** 5 products behind one reverse proxy, one Cloudflare tunnel, one domain. Adding a new product = one API call. Switching tunnel providers = one config change. No per-app tunnel management.
+
+**Named:** Multi-Tunnel Abstraction
+**Commit:** See initial architecture commit
+**Origin:** Military network operations — the transport layer is abstracted from the application layer. A radio operator doesn't configure TCP/IP; the radio handles it. Same principle applied to web tunnels.
+
+### Automatic App Registration with Health Routing (March 2026)
+
+**Invention:** Applications self-register with the reverse proxy on startup, providing their port and hostnames. The proxy health-checks all registered apps and routes traffic only to healthy backends, with hostname collision detection (409 Conflict if two apps claim the same hostname).
+
+**The Problem:** Traditional reverse proxies (nginx, HAProxy) require manual config files. Adding a new backend means editing a config and reloading. If a backend dies, traffic still routes to it until someone notices. Two developers accidentally claiming the same hostname produces silent routing conflicts.
+
+**The Insight:** The app knows its own port and hostnames. The proxy should learn from the app, not from a config file. Registration should be a POST request, not a file edit. Health checks should be automatic, not optional. And hostname collisions should be detected at registration time, not after production traffic breaks.
+
+**The Technique:**
+1. `registry.rs`: POST /register with app name, port, hostnames — proxy adds to routing table
+2. Health checks: parallel GET /health to all backends every 30s, unhealthy backends removed from rotation
+3. Hostname collision: 409 Conflict if another app already owns the hostname
+4. GET /approuter/status: real-time health of all registered products with latency
+5. API key auth on mutating endpoints
+
+**Result:** Zero-config reverse proxy. Apps register themselves. Dead apps stop receiving traffic. Hostname conflicts are caught immediately. Full observability via /approuter/status.
+
+**Named:** Self-Registering Reverse Proxy
+**Commit:** See initial architecture commit and `0e2138b` (status endpoint)
+**Origin:** Service mesh patterns (Consul, Envoy) reduced to their simplest form — no sidecar proxies, no service mesh control plane, just a single binary that apps talk to on startup.
+
+### 2026-04-08 — Human Revelations Documentation Pass
+
+**What:** Documented novel human-invented techniques across the full CochranBlock portfolio. Added Human Revelations section with Multi-Tunnel Abstraction and Automatic App Registration.
+**Commit:** See git log
+**AI Role:** AI formatted and wrote the sections. Human identified which techniques were genuinely novel, provided the origin stories, and directed the documentation pass.
+
+---
+
 ## Entries
 
 ### 2026-04-02 — Live Status Endpoint
