@@ -64,6 +64,21 @@
 
 ## Entries
 
+### 2026-04-09 — Tor Exit Node Blocking + Security Hardening Sprint
+
+**What:** Two-phase security hardening. Phase 1 (Apr 7): Block Tor exit nodes at the proxy layer using Cloudflare's `CF-IPCountry: T1` header — returns 403 before traffic reaches any backend. Zero dependencies, zero lists to maintain — Cloudflare classifies the traffic, approuter enforces. Phase 2 (Apr 3-7): Auth-gated all tunnel write endpoints (`start`/`stop`/`ensure`) that were previously unauthenticated, completing Backlog #1 from the P23 triple-lens audit. Added 7 tunnel auth tests covering reject-without-key, accept-correct-key, and open-when-no-key scenarios.
+**Why:** P23 paranoia lens flagged tunnel start/stop/ensure as live unauthenticated write endpoints. Tor blocking closes the anonymous abuse vector. Together: no anonymous actor can start/stop tunnels or reach backends through Tor.
+**Commit:** `e4e0f7f` (Tor blocking), `ce783ea` (tunnel auth gate)
+**AI Role:** AI implemented the CF-IPCountry check and auth-gate plumbing. Human directed the security model — block at proxy, not at app; use CF headers, not IP lists.
+
+### 2026-04-03 — Backlog Blitz (12 Items, 33 Tests, Status Dashboard)
+
+**What:** Single-day sprint closed 12 of 20 backlog items from the P23 audit. Shipped: (1) 12 new integration tests across 4 test files — API key auth, hostname collision, status endpoint, route matching, proxy forwarding, proxy errors, Cloudflare DNS mocks. (2) Startup env validation for `start-all`. (3) Shared lazy reqwest client for Google APIs handler. (4) Analytics retention — auto-prune old JSONL on startup. (5) TROUBLESHOOTING.md. (6) Post-spawn health polling loop with `[ready]`/`[timeout]` per backend. (7) HTML status dashboard at `/approuter/status/` with dark theme, auto-refresh, card grid. (8) Binary size verified at 4.8MB (target was <5MB). Total test count reached 33 across 8 test files (1,414 LOC of tests).
+**Why:** P23 triple-lens audit generated a prioritized backlog. This sprint executed it.
+**Commit:** `8d2de8a`, `dc3beb2`, `e4cb83c`, `387b9be`, `ee81881`, `f82e636`, `8357da8`, `e86e3e4`, `54f7f4d`
+**Method:** P23 triple-lens (optimist/pessimist/paranoia) generated the backlog; serial execution closed items by priority.
+**AI Role:** AI implemented all features and tests. Human directed priority order and scope per item.
+
 ### 2026-04-02 — Live Status Endpoint
 
 **What:** Added GET /approuter/status. Health-checks all registered products in parallel (3s timeout). Returns product name, backend URL, hostnames, healthy/unhealthy, HTTP status code, and latency for every routed service. The cross-reference — no lying about what's running.

@@ -27,14 +27,18 @@ flowchart LR
 
 | Metric | Value |
 |--------|-------|
-| Lines of Rust | 4,342 across 16 modules |
-| Largest module | cloudflare/ (1,005 LOC across 3 files) — DNS, tunnel sync, token auth |
+| Lines of Rust | 4,472 across 17 modules + 1,414 LOC in 7 test files |
+| Functions | 156 |
+| Tests | 33 across 8 test files |
+| Largest module | run.rs (484 LOC) — server orchestration, post-spawn health polling |
+| Largest subsystem | cloudflare/ (1,005 LOC across 3 files) — DNS, tunnel sync, token auth |
 | Routing modes | Host-based, path-based, suffix matching, wildcard (*.domain) |
-| API endpoints | 23 routes — register, apps, DNS, tunnel control, multi-tunnel, analytics, live status |
+| API endpoints | 23+ routes — register, apps, DNS, tunnel control, multi-tunnel, analytics, live status |
 | Credential model | Centralized — apps never touch CF_TOKEN. Mutating endpoints gated by ROUTER_API_KEY |
 | Tunnel providers | Cloudflare, ngrok, Tailscale Funnel, Bore, localtunnel (multi-tunnel with competition metrics) |
 | Analytics | Server-side from CF geo headers — zero JS, zero cookies, city-level geo |
-| Binary optimization | opt-level=z, LTO, strip, panic=abort |
+| Binary size | 4.8MB (release) — opt-level=z, LTO, strip, panic=abort |
+| Security | Tor exit blocking (CF-IPCountry T1), API key auth on all write endpoints |
 
 ## Key Artifacts
 
@@ -55,6 +59,21 @@ flowchart LR
 | start-all | Single command orchestrates all backend services + tunnel |
 | Restart Commands | Per-service restart: approuter, cochranblock, oakilydokily, ronin-sites, rogue-repo |
 | Purge Cache | God mode — purges all Cloudflare zones under the account |
+| Tor Exit Blocking | CF-IPCountry T1 header check in proxy — 403 before traffic reaches backends. Zero deps, zero lists |
+| Status Dashboard | HTML dashboard at /approuter/status/ — dark theme, auto-refresh 15s, per-product health cards with latency |
+| Post-Spawn Health Polling | 30s polling loop after start-all, 500ms interval, prints [ready]/[timeout] per backend |
+| Analytics Retention | Auto-prune old JSONL analytics files on startup |
+| Startup Env Validation | Validates required env vars before launching backends in start-all |
+| Integration Test Suite | 33 tests across 8 files — API auth, hostname collision, route matching, proxy forwarding, tunnel auth, CF DNS mocks |
+
+## Named Techniques
+
+| Technique | What | Origin |
+|-----------|------|--------|
+| Multi-Tunnel Abstraction | Trait-based abstraction over 5 tunnel providers — apps register once, provider is swappable | Military network ops — transport layer abstracted from application layer |
+| Self-Registering Reverse Proxy | Apps POST to /register on startup, proxy learns routing from apps, not config files | Service mesh patterns (Consul, Envoy) reduced to one binary |
+| P23 Triple Lens | Optimist/Pessimist/Paranoia audit generates prioritized backlog — applied to QA hardening | Human-invented audit methodology |
+| CF-IPCountry Gate | Block traffic classes at the proxy using Cloudflare's geo classification headers — zero lists, zero deps | Proxy-layer enforcement — let CF classify, let approuter enforce |
 
 ## How to Verify
 
