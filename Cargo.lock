@@ -84,6 +84,7 @@ dependencies = [
  "dirs",
  "dotenvy",
  "exopack",
+ "libc",
  "reqwest",
  "serde",
  "serde_json",

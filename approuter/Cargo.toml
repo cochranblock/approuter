@@ -4,7 +4,7 @@
 [package]
 name = "approuter"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 description = "Reverse proxy + app registration for Cloudflare tunnel"
 
 # client = re-export approuter-client for apps. Not needed by approuter binary or -test.
@@ -40,6 +40,7 @@ tower-http = { version = "0.5", features = ["cors", "compression-gzip", "compres
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dirs = "5"
+libc = "0.2"
 approuter-client = { path = "client", optional = true }
 exopack = { git = "https://github.com/cochranblock/exopack", optional = true, features = ["interface"] }
 

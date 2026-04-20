@@ -124,6 +124,12 @@ impl t32 {
 
     /// Resolve backend for host. Registry overrides legacy t29.
     pub fn get_backend(&self, p0: Option<&str>, _p1: &str) -> Option<String> {
+        self.resolve_app(p0).map(|(_app, backend)| backend)
+    }
+
+    /// Resolve `(app_id, backend_url)` for a host. Used by the metrics catalog
+    /// so every request event carries the matched app name, not just the URL.
+    pub fn resolve_app(&self, p0: Option<&str>) -> Option<(String, String)> {
         let host = p0.and_then(|h| h.split(':').next())?.trim();
         if host.is_empty() {
             return None;
@@ -132,7 +138,7 @@ impl t32 {
         for app in &data.apps {
             for h in &app.s47 {
                 if h.eq_ignore_ascii_case(host) {
-                    return Some(app.s48.clone());
+                    return Some((app.s46.clone(), app.s48.clone()));
                 }
                 // Wildcard: *.example.com matches sub.example.com
                 if let Some(suffix) = h.strip_prefix("*.") {
@@ -140,7 +146,7 @@ impl t32 {
                         && host.ends_with(suffix)
                         && host.as_bytes()[host.len() - suffix.len() - 1] == b'.'
                     {
-                        return Some(app.s48.clone());
+                        return Some((app.s46.clone(), app.s48.clone()));
                     }
                 }
             }

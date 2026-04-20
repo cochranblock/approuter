@@ -26,7 +26,8 @@ fn load_env_into_process(path: &std::path::Path) {
             let k = k.trim();
             let v = v.trim().trim_matches('"');
             if !k.is_empty() && !v.is_empty() {
-                env::set_var(k, v);
+                // SAFETY: single-threaded startup context, before tokio/axum spawn.
+                unsafe { env::set_var(k, v) };
             }
         }
     }
@@ -48,7 +49,8 @@ fn load_cf_env_from(path: &std::path::Path) {
             if CF_KEYS.contains(&k) {
                 let v = v.trim().trim_matches('"');
                 if !v.is_empty() {
-                    env::set_var(k, v);
+                    // SAFETY: single-threaded startup context, before tokio/axum spawn.
+                    unsafe { env::set_var(k, v) };
                 }
             }
         }

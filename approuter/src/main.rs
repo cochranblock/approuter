@@ -6,10 +6,14 @@
 mod analytics;
 mod api;
 mod cloudflare;
+mod ingress_direct;
+mod metrics_api;
+mod metrics_catalog;
 mod proxy;
 mod registry;
 mod restart;
 mod run;
+mod selfcheck;
 mod tunnel;
 mod tunnel_api;
 mod tunnel_metrics;
@@ -68,6 +72,35 @@ enum Cmd {
         #[arg(long, default_value_t = false)] open: bool,
     },
     CfTokenCheck,
+    /// DNS automation — writes go through CF_DNS_TOKEN (fallback CF_TOKEN).
+    Dns {
+        #[command(subcommand)]
+        cmd: DnsCmd,
+    },
+}
+
+#[derive(Subcommand)]
+enum DnsCmd {
+    /// Create or update an A/AAAA record. Example:
+    /// `approuter dns set A gd.cochranblock.org 203.0.113.7`.
+    Set {
+        /// Record type — currently only `A` is supported.
+        kind: String,
+        /// Fully-qualified record name, e.g. `gd.cochranblock.org`.
+        name: String,
+        /// New record content (IPv4 address).
+        content: String,
+    },
+    /// Watch the proxy's external IP and update `--record` when it changes.
+    /// Runs until Ctrl-C. Never started automatically — invoke explicitly.
+    WatchIp {
+        /// Fully-qualified A record to keep in sync with the external IP.
+        #[arg(long)]
+        record: String,
+        /// Poll interval, clamped to a 30s minimum.
+        #[arg(long, default_value_t = 300)]
+        interval_secs: u64,
+    },
 }
 
 #[derive(Parser)]
@@ -148,6 +181,7 @@ fn main() {
             Cmd::SubmitSitemap { site, sitemap } => setup::f137(&site, &sitemap),
             Cmd::StartAll { open } => run::start_all(open),
             Cmd::CfTokenCheck => run::cf_token_check(&root),
+            Cmd::Dns { cmd: dns_cmd } => dispatch_dns(dns_cmd),
         };
         std::process::exit(r.map(|_| 0).unwrap_or_else(|_| 1));
     }
@@ -219,6 +253,8 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     let analytics_store = Arc::new(analytics::t42::new(&base_dir));
     let tunnel_metrics_store = Arc::new(tunnel_metrics::t50::new());
     let tunnel_mgr = Arc::new(tunnel_provider::t47::new(p0.s16, &base_dir, tunnel_metrics_store.clone()));
+    let catalog = Arc::new(metrics_catalog::MetricsCatalog::new());
+    let selfcheck_store = Arc::new(selfcheck::SelfCheckStore::new());
 
     if let Err(e) = tunnel::f91_gen(&base_dir, registry.as_ref(), p0.s16) {
         tracing::warn!("Could not generate tunnel config: {}", e);
@@ -261,6 +297,17 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         }
     });
 
+    // Self-check loop (dual-path liveness). `direct_port = 0` skips the direct
+    // probe — fine until multi-ingress is bound.
+    let direct_port: u16 = std::env::var("INGRESS_DIRECT_PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    selfcheck::spawn_loop(
+        selfcheck_store.clone(),
+        selfcheck::SelfCheckConfig::from_env(direct_port),
+    );
+
     let api_router = axum::Router::new()
         .route("/health", get(health))
         .route("/approuter/health", get(health))
@@ -293,16 +340,41 @@ async fn serve(p0: t28) -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .with_state(analytics_store.clone())
         .route("/approuter/status", get(api::f140))
         .route("/approuter/status/", get(api::f141))
-        .with_state((registry.clone(), v2.clone()));
+        .with_state((registry.clone(), v2.clone()))
+        .route("/approuter/metrics", get(metrics_api::metrics_full))
+        .route("/approuter/metrics/public", get(metrics_api::metrics_public))
+        .route("/approuter/metrics/prometheus", get(metrics_api::metrics_prometheus))
+        .with_state((
+            catalog.clone(),
+            selfcheck_store.clone(),
+            registry.clone(),
+            env!("CARGO_PKG_VERSION").to_string(),
+            std::env::var("GIT_SHA").unwrap_or_default(),
+        ));
 
     let r0 = api_router
-        .merge(proxy::f55(v2, Some(registry.clone()), Some(analytics_store.clone())))
+        .merge(proxy::f55(
+            v2,
+            Some(registry.clone()),
+            Some(analytics_store.clone()),
+            Some(catalog.clone()),
+        ))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http());
 
     let v3 = format!("{}:{}", p0.s17, p0.s16);
     let v4 = tokio::net::TcpListener::bind(&v3).await?;
     tracing::info!("approuter listening on http://{}", v3);
+
+    // Direct ingress listener — NOT bound unless INGRESS_DIRECT_PORT > 0.
+    // Sharing the same router means both paths serve the same routes; the
+    // direct listener wraps its router in a middleware that tags requests
+    // with IngressPath::Direct (or ::Lan for RFC1918 peers).
+    ingress_direct::spawn_if_enabled(
+        ingress_direct::DirectIngressConfig::from_env(),
+        r0.clone(),
+    )
+    .await?;
 
     // Sync tunnel ingress to correct port on startup (prevents stale 55842 etc.)
     // Only sync when tunnel is enabled — otherwise we'd push a dev/test port to the dashboard.
@@ -361,6 +433,33 @@ async fn analytics_recent(
 
 async fn health() -> impl axum::response::IntoResponse {
     axum::Json(serde_json::json!({"status": "ok", "service": "approuter"}))
+}
+
+/// DNS subcommand dispatch. Creates a one-shot tokio runtime since the parent
+/// `main` is still synchronous at this point.
+fn dispatch_dns(cmd: DnsCmd) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on(async move {
+        match cmd {
+            DnsCmd::Set { kind, name, content } => {
+                let kind_upper = kind.to_ascii_uppercase();
+                if kind_upper != "A" {
+                    return Err(format!(
+                        "only A records are currently supported (got {})",
+                        kind
+                    )
+                    .into());
+                }
+                let id = cloudflare::set_a_record_for(&name, &content).await?;
+                println!("{} A {} -> {} (record id: {})", kind_upper, name, content, id);
+                Ok(())
+            }
+            DnsCmd::WatchIp {
+                record,
+                interval_secs,
+            } => cloudflare::watch_ip_and_update(&record, interval_secs).await,
+        }
+    })
 }
 
 use std::collections::HashMap;
