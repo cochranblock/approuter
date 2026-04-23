@@ -22,3 +22,8 @@
 
 # Claude Code worktrees
 .claude/worktrees/
+.env.bak
+.env.local
+target/
+**/target/
+*.lock.tmp

@@ -1,0 +1,56 @@
+[package]
+name = "approuter-acme"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust ACME TLS terminator for the approuter family. DNS-01 via Cloudflare. Sibling to approuter, standalone-capable."
+license = "Unlicense"
+repository = "https://github.com/cochranblock/approuter-acme"
+homepage = "https://cochranblock.org"
+keywords = ["acme", "tls", "letsencrypt", "reverse-proxy", "rustls"]
+categories = ["command-line-utilities", "web-programming"]
+
+[[bin]]
+name = "approuter-acme"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = "0.26"
+rustls = "0.23"
+rustls-pemfile = "2"
+instant-acme = "0.8"
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5"
+
+[profile.diamond]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+overflow-checks = false
+debug = false
+incremental = false
+
+[profile.diamond-edge]
+inherits = "release"
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+overflow-checks = false
+debug = false
+incremental = false
