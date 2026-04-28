@@ -8,6 +8,9 @@ name = "approuter-client"
 version = "0.2.0"
 edition = "2021"
 description = "Self-register with approuter (f116). Used by cochranblock, oakilydokily."
+license = "Unlicense"
+repository = "https://github.com/cochranblock/approuter"
+authors = ["Cochran Block"]
 
 [lib]
 name = "approuter_client"
